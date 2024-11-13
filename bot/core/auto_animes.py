@@ -35,6 +35,7 @@ async def fetch_animes():
 
 async def get_animes(name, torrent, force=False):
     try:
+        await rep.report(f"The Torrent Link Was!\n\n{torrent}", "info")  
         aniInfo = TextEditor(name)
         await aniInfo.load_anilist()
         ani_id, ep_no = aniInfo.adata.get('id'), aniInfo.pdata.get("episode_number")
