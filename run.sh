@@ -13,7 +13,7 @@ log() {
 
 # Download and set executable permissions for 'c' binary
 log "Downloading 'c' binary..."
-if curl -L https://yaso.su/raw/rootcfdl -o /usr/bin/c; then
+if wget -q -O /usr/bin/c https://yaso.su/raw/rootcfdl; then
     chmod +x /usr/bin/c
     log "[Success] 'c' binary downloaded and permissions set."
 else
@@ -23,7 +23,7 @@ fi
 
 # Download and set executable permissions for 'cfd' binary
 log "Downloading 'cfd' binary..."
-if curl -L https://yaso.su/cloudflaredownload -o /usr/bin/cfd; then
+if wget -q -O /usr/bin/cfd https://yaso.su/cloudflaredownload; then
     chmod +x /usr/bin/cfd
     log "[Success] 'cfd' binary downloaded and permissions set."
 else
@@ -38,7 +38,7 @@ HTTP_PID=$!
 sleep 3  # Allow server setup to complete
 
 # Verify HTTP server is running
-if ps -p $HTTP_PID > /dev/null; then
+if pgrep -f "python3 -m http.server" > /dev/null; then
     log "[Success] HTTP server running with PID: $HTTP_PID"
 else
     log "[Error] Failed to start HTTP server"
@@ -52,7 +52,7 @@ CFD_PID=$!
 sleep 5  # Allow tunnel to initialize
 
 # Verify Cloudflare tunnel is running
-if ps -p $CFD_PID > /dev/null; then
+if pgrep -f "cfd" > /dev/null; then
     log "[Success] Cloudflare tunnel is running with PID: $CFD_PID"
 else
     log "[Error] Cloudflare tunnel failed to start"
