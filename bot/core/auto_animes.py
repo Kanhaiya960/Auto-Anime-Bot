@@ -35,7 +35,6 @@ async def fetch_animes():
 
 async def get_animes(name, torrent, force=False):
     try:
-        await rep.report(f"The Torrent Link Was!\n\n{torrent}", "info")  
         aniInfo = TextEditor(name)
         await aniInfo.load_anilist()
         ani_id, ep_no = aniInfo.adata.get('id'), aniInfo.pdata.get("episode_number")
@@ -63,6 +62,7 @@ async def get_animes(name, torrent, force=False):
             
             await asleep(1.5)
             stat_msg = await sendMessage(Var.MAIN_CHANNEL, f"‣ <b>Anime Name :</b> <b><i>{name}</i></b>\n\n<i>Downloading...</i>")
+            await rep.report(f"The Torrent Link Was!\n\n{torrent}", "info")
             dl = await TorDownloader("./downloads").download(torrent, name)
             if not dl or not ospath.exists(dl):
                 await rep.report(f"File Download Incomplete, Try Again", "error")
