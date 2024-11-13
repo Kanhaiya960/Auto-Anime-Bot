@@ -90,6 +90,13 @@ async def pause_fetch(client, message):
 async def _log(client, message):
     await message.reply_document("log.txt", quote=True)
 
+@bot.on_message(command('link') & private & user(Var.ADMINS))
+@new_task
+async def _link(client, message):
+    with open("/root/cfd.log") as f:
+        url_match = re.search(r'https?://\S+\.trycloudflare\.com', f.read())
+        await message.reply_text(url_match.group() if url_match else "No tunnel URL found.")
+        
 @bot.on_message(command('addlink') & private & user(Var.ADMINS))
 @new_task
 async def add_task(client, message):
