@@ -38,7 +38,7 @@ HTTP_PID=$!
 sleep 3  # Allow server setup to complete
 
 # Verify HTTP server is running
-if pgrep -f "python3 -m http.server" > /dev/null; then
+if kill -0 $HTTP_PID 2>/dev/null; then
     log "[Success] HTTP server running with PID: $HTTP_PID"
 else
     log "[Error] Failed to start HTTP server"
@@ -52,7 +52,7 @@ CFD_PID=$!
 sleep 5  # Allow tunnel to initialize
 
 # Verify Cloudflare tunnel is running
-if pgrep -f "cfd" > /dev/null; then
+if kill -0 $CFD_PID 2>/dev/null; then
     log "[Success] Cloudflare tunnel is running with PID: $CFD_PID"
 else
     log "[Error] Cloudflare tunnel failed to start"
