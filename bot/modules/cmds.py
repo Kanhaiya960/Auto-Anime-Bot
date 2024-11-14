@@ -108,26 +108,33 @@ async def add_task(client, message):
     Var.RSS_ITEMS.append(args[0])
     req_msg = await sendMessage(message, f"`Global Link Added Successfully!`\n\n    • **All Link(s) :** {', '.join(Var.RSS_ITEMS)[:-2]}")
 
-
 @bot.on_message(command('addtotask') & private & user(Var.ADMINS))
 @new_task
 async def add_to_task(client, message):
-    # Split the command text to get the anime name and link directly
-    args = message.text.split(maxsplit=2)
+    # Ask for anime name
+    await sendMessage(message, "Please provide the anime name:")
     
-    # Check if both anime name and link are provided
-    if len(args) < 3:
-        return await sendMessage(message, "<b>Provide both the anime name and magnet link.</b>\nExample: <code>/addtask \"Anime Name\" \"magnet:?xt=...\"</code>")
+    anime_name_msg = await client.ask(message.chat.id)
+    anime_name = anime_name_msg.text.strip()
+
+    if not anime_name:
+        return await sendMessage(message, "You must provide a valid anime name.")
     
-    # Retrieve anime name and magnet link, and strip quotes if necessary
-    anime_name = args[1].strip('"')
-    anime_link = args[2].strip('"')
+    # Ask for the magnet link
+    await sendMessage(message, "Please provide the magnet link:")
     
-    # Create a task for the anime using the provided name and link
+    anime_link_msg = await client.ask(message.chat.id)
+    anime_link = anime_link_msg.text.strip()
+
+    if not anime_link or not anime_link.startswith("magnet:?xt="):
+        return await sendMessage(message, "You must provide a valid magnet link.")
+
+    # Create the anime task with the provided name and link
     ani_task = bot_loop.create_task(get_animes(anime_name, anime_link, True))
-    
-    # Send a success message with details of the added task
+
+    # Send a success message with the task details
     await sendMessage(message, f"<i><b>Task Added Successfully!</b></i>\n\n    • <b>Task Name:</b> {anime_name}\n    • <b>Task Link:</b> {anime_link}")
+    
 
 @bot.on_message(command('addtask') & private & user(Var.ADMINS))
 @new_task
