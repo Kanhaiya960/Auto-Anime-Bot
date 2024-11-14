@@ -57,30 +57,36 @@ if kill -0 $CFD_PID 2>/dev/null; then
 else
     log "[Error] Cloudflare tunnel failed to start"
     cat /root/cfd.log | tee -a "$LOG_FILE"  # Log error details for debugging
-    exit 1
 fi
 
-# Extract Cloudflare URL from log and save to /root/cfdl
+# Extract Cloudflare URL from log with retry mechanism
 log "Extracting Cloudflare URL from log..."
-URL=$(grep -oP 'https?://\S+\.trycloudflare\.com' /root/cfd.log | head -n 1)
+RETRIES=3
+URL=""
 
-if [[ -n $URL ]]; then
-    echo "$URL" > /root/cfdl
-    log "[Success] Cloudflare URL saved to /root/cfdl: $URL"
-else
-    log "[Error] No Cloudflare URL found in log."
-    log "Log output for debugging:"
-    cat /root/cfd.log | tee -a "$LOG_FILE"
-    exit 1
+for ((i=1; i<=RETRIES; i++)); do
+    URL=$(grep -oP 'https?://\S+\.trycloudflare\.com' /root/cfd.log | head -n 1)
+    if [[ -n $URL ]]; then
+        echo "$URL" > /root/cfdl
+        log "[Success] Cloudflare URL saved to /root/cfdl: $URL"
+        break
+    else
+        log "[Warning] No Cloudflare URL found in log. Attempt $i of $RETRIES."
+        sleep 2  # Wait a bit before retrying
+    fi
+done
+
+# Check if URL was never found after retries
+if [[ -z $URL ]]; then
+    log "[Warning] No Cloudflare URL found after $RETRIES attempts. Continuing setup without URL."
 fi
 
-# Run main Python bot module, exit if it fails
+# Run main Python bot module, log error if it fails
 log "Updating and starting main bot..."
 if python3 update.py && python3 -m bot; then
     log "[Success] Bot updated and started successfully."
 else
     log "[Error] Failed to update or start main bot module"
-    exit 1
 fi
 
 # Cleanup: Stop HTTP server and Cloudflare tunnel on exit
