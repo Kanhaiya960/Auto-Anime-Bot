@@ -110,20 +110,14 @@ async def add_task(client, message):
 
 @bot.on_message(command('addtotask') & private & user(Var.ADMINS))
 @new_task
-async def add_to_task(client, message):
-    # Ask for anime name
-    await sendMessage(message, "Please provide the anime name:")
-    
-    anime_name_msg = await client.ask(message.chat.id)
+async def add_to_task(client, message):    
+    anime_name_msg = await client.ask(message.chat.id, "Please provide the anime name:")
     anime_name = anime_name_msg.text.strip()
 
     if not anime_name:
         return await sendMessage(message, "You must provide a valid anime name.")
     
-    # Ask for the magnet link
-    await sendMessage(message, "Please provide the magnet link:")
-    
-    anime_link_msg = await client.ask(message.chat.id)
+    anime_link_msg = await client.ask(message.chat.id, "Please provide the magnet link:")
     anime_link = anime_link_msg.text.strip()
 
     if not anime_link or not anime_link.startswith("magnet:?xt="):
