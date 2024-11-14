@@ -120,7 +120,7 @@ async def add_to_task(client, message):
     anime_link_msg = await client.ask(message.chat.id, "Please provide the magnet link:")
     anime_link = anime_link_msg.text.strip()
 
-    if not anime_link or not anime_link.startswith("magnet:?xt="):
+    if not anime_link:
         return await sendMessage(message, "You must provide a valid magnet link.")
 
     # Create the anime task with the provided name and link
