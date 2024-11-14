@@ -117,11 +117,11 @@ async def add_to_task(client, message):
     
     # Check if both anime name and link are provided
     if len(args) < 3:
-        return await sendMessage(message, "<b>Provide both the anime name and link.</b>\nExample: <code>/addtask AnimeName https://example.com/anime-link</code>")
+        return await sendMessage(message, "<b>Provide both the anime name and magnet link.</b>\nExample: <code>/addtask \"Anime Name\" \"magnet:?xt=...\"</code>")
     
-    # Assign the name and link from the arguments
-    anime_name = args[1]
-    anime_link = args[2]
+    # Retrieve anime name and magnet link, and strip quotes if necessary
+    anime_name = args[1].strip('"')
+    anime_link = args[2].strip('"')
     
     # Create a task for the anime using the provided name and link
     ani_task = bot_loop.create_task(get_animes(anime_name, anime_link, True))
