@@ -108,6 +108,27 @@ async def add_task(client, message):
     Var.RSS_ITEMS.append(args[0])
     req_msg = await sendMessage(message, f"`Global Link Added Successfully!`\n\n    • **All Link(s) :** {', '.join(Var.RSS_ITEMS)[:-2]}")
 
+
+@bot.on_message(command('addtotask') & private & user(Var.ADMINS))
+@new_task
+async def add_to_task(client, message):
+    # Split the command text to get the anime name and link directly
+    args = message.text.split(maxsplit=2)
+    
+    # Check if both anime name and link are provided
+    if len(args) < 3:
+        return await sendMessage(message, "<b>Provide both the anime name and link.</b>\nExample: <code>/addtask AnimeName https://example.com/anime-link</code>")
+    
+    # Assign the name and link from the arguments
+    anime_name = args[1]
+    anime_link = args[2]
+    
+    # Create a task for the anime using the provided name and link
+    ani_task = bot_loop.create_task(get_animes(anime_name, anime_link, True))
+    
+    # Send a success message with details of the added task
+    await sendMessage(message, f"<i><b>Task Added Successfully!</b></i>\n\n    • <b>Task Name:</b> {anime_name}\n    • <b>Task Link:</b> {anime_link}")
+
 @bot.on_message(command('addtask') & private & user(Var.ADMINS))
 @new_task
 async def add_task(client, message):
