@@ -130,7 +130,7 @@ async def fencode(fname, fpath, message, m):
             chat_id=message.chat.id,
             video=out_path,
             thumb=thumbnail_path,
-            caption=f"‣ <b>File Name:</b> <i>{fname}</i> height: {height} width: {width} thumbNail: {thumbnail_path}",
+            caption=f"‣ <b>File Name:</b> <i>{fname}</i>",
             duration=int(duration),
             width=width,
             height=height,
