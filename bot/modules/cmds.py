@@ -1,7 +1,7 @@
 import os
 import re
 from asyncio import sleep as asleep, gather
-from pyrogram.filters import command, private, user
+from pyrogram.filters import command, private, user, document, video
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors import FloodWait, MessageNotModified
 
@@ -129,44 +129,10 @@ async def add_to_task(client, message):
     # Send a success message with the task details
     await sendMessage(message, f"<i><b>Task Added Successfully!</b></i>\n\n    • <b>Task Name:</b> {anime_name}\n    • <b>Task Link:</b> {anime_link}")
     
-@bot.on_message(command('uploadtask') & private & user(Var.ADMINS))
+@bot.on_message(document & video & private & user(Var.ADMINS))
 @new_task
-async def upload_task(client, message):
-    anime_name_msg = await client.ask(message.chat.id, "Please provide the anime name:")
-    anime_name = anime_name_msg.text.strip()
-
-    if not anime_name:
-        return await sendMessage(message, "You must provide a valid anime name.")
-
-    await sendMessage(message, "Please send the video or document file:")
-
-    # Wait for the user's response (only document or video files)
-    response = await client.listen(message.chat.id)
-    print(response)
-    if response.document or response.video:
-        # Download the file
-        file_path = await client.download_media(response)        
-        file_name = response.document.file_name if response.document else response.video.file_name
-
-        if not file_path:
-            return await sendMessage(message, "Failed to download the file. Please try again.")
-        
-        # Pass the file path and file name to the `get_animes` function
-        
-        # Send a success message with the task details
-        await sendMessage(
-            message,
-            f"<i><b>Task Added Successfully!</b></i>\n\n"
-            f"    • <b>Task Name:</b> {anime_name}\n"
-            f"    • <b>File Name:</b> {file_name}\n"
-            f"    • <b>File Path:</b> {file_path}"
-        )
-    else:
-        await sendMessage(
-            message,
-            "Invalid response. You must provide a valid video or document file."
-        )
-        
+async def download_file(client, message):
+     print(message) 
 
 
 @bot.on_message(command('addtask') & private & user(Var.ADMINS))
