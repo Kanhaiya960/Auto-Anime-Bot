@@ -78,10 +78,12 @@ async def fencode(fname, fpath, message):
 
     try:
         # Upload the encoded file using Pyrogram's send_video
-        await bot.send_video(
+        await bot.send_document(
             chat_id=message.chat.id,
-            video=out_path,
-            caption=f"‣ <b>Anime Name:</b> <i>{fname}</i>\n‣ <b>Status:</b> Uploaded Successfully.",
+            document=out_path,
+            thumb="thumb.jpg" if ospath.exists("thumb.jpg") else None,                  
+            force_document=True,
+            caption=f"‣ <b>File Name:</b> <i>{fname}</i>\n‣ <b>Status:</b> Uploaded Successfully.",
         )
     except Exception as e:
         await message.reply(
@@ -90,6 +92,8 @@ async def fencode(fname, fpath, message):
         await stat_msg.delete()
         ffLock.release()
         return
+    finally:
+            await aioremove(out_path)
 
     # Release the lock once the task is completed
     ffLock.release()
