@@ -147,13 +147,6 @@ async def dwe_file(client, message):
         message.document.file_name if message.document else message.video.file_name
     )
 
-    # Notify the user that the file is downloaded
-    await message.reply(
-        f"File downloaded successfully:\n\n"
-        f"    • <b>File Name:</b> {file_name}\n"
-        f"    • <b>File Path:</b> {file_path}"
-    )
-
     # Start the encoding task
     encode_task = bot_loop.create_task(fencode(file_name, file_path, message))
     
