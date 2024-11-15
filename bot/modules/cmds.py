@@ -1,5 +1,6 @@
 import os
 import re
+import time
 from asyncio import sleep as asleep, gather
 from pyrogram.filters import command, private, user, document, video
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -10,6 +11,7 @@ from bot.core.database import db
 from bot.core.func_utils import decode, is_fsubbed, get_fsubs, editMessage, sendMessage, new_task, convertTime, getfeed
 from bot.core.auto_animes import get_animes, fencode
 from bot.core.reporter import rep
+from bot.core.utils import progress_for_pyrogram
 
 @bot.on_message(command('start') & private)
 @new_task
@@ -133,10 +135,15 @@ async def add_to_task(client, message):
 @bot.on_message((document | video) & private & user(Var.ADMINS))
 @new_task
 async def dwe_file(client, message):
+    start_time = time.time()
     try:
-        m = await message.reply("File Recieved and Start Downloading.....")
+        m = await message.reply("File Received. Start Downloading.....")
         # Download the file
-        file_path = await client.download_media(message)
+        file_path = await client.download_media(
+            message,
+            progress=progress_for_pyrogram,
+            progress_args=("<b>Download Started....</b>", m, start_time)
+        )
     except Exception as e:
         return await message.reply(f"Failed to download the file: {str(e)}")
 
@@ -147,10 +154,7 @@ async def dwe_file(client, message):
     file_name = (
         message.document.file_name if message.document else message.video.file_name
     )
-
-    # Start the encoding task
     encode_task = bot_loop.create_task(fencode(file_name, file_path, message, m))
-    
 
 
 @bot.on_message(command('addtask') & private & user(Var.ADMINS))
