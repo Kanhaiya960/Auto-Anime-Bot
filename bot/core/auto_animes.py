@@ -33,6 +33,74 @@ async def fetch_animes():
                 if (info := await getfeed(link, 0)):
                     bot_loop.create_task(get_animes(info.title, info.link))
 
+async def fencode(fname, fpath, message):
+    # Notify the user that encoding has started
+    encode = await bot.send_message(
+        chat_id=message.chat.id, text="<i><b>Task encoding.......!</b></i>"
+    )
+    stat_msg = await bot.send_message(
+        message.chat.id,
+        f"‣ <b>Anime Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
+    )
+
+    encodeid = encode.id
+    ffEvent = Event()
+    ff_queued[encodeid] = ffEvent
+
+    # If the lock is already engaged, inform the user that the task is queued
+    if ffLock.locked():
+        await stat_msg.edit_text(
+            f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Queued to Encode...</i>"
+        )
+
+    # Add the encoding task to the queue and wait for its turn
+    await ffQueue.put(encodeid)
+    await ffEvent.wait()
+
+    # Acquire the lock for the current encoding task
+    await ffLock.acquire()
+    await stat_msg.edit_text(
+        f"‣ <b>Anime Name :</b> <b><i>{fname}</i></b>\n\n<i>Ready to Encode...</i>"
+    )
+
+    await asleep(1.5)
+
+    try:
+        # Start the encoding process
+        out_path = await FFEncoder(stat_msg, fpath, fname, "360").start_encode()
+    except Exception as e:
+        await stat_msg.delete()
+        ffLock.release()
+        return await message.reply(f"Encoding failed: {str(e)}")
+
+    await stat_msg.edit_text("Successfully Compressed. Now proceeding to upload...")
+    await asleep(1.5)
+
+    try:
+        # Upload the encoded file using Pyrogram's send_video
+        await bot.send_video(
+            chat_id=message.chat.id,
+            video=out_path,
+            caption=f"‣ <b>Anime Name:</b> <i>{fname}</i>\n‣ <b>Status:</b> Uploaded Successfully.",
+        )
+    except Exception as e:
+        await message.reply(
+            f"Error during upload: {e}. Encoding task canceled, please retry."
+        )
+        await stat_msg.delete()
+        ffLock.release()
+        return
+
+    # Release the lock once the task is completed
+    ffLock.release()
+    await stat_msg.edit_text(
+        f"‣ <b>Anime Name :</b> <b><i>{fname}</i></b>\n\n<i>Upload completed successfully.</i>"
+    )
+    
+
+
+
+
 async def get_animes(name, torrent, force=False):
     try:
         aniInfo = TextEditor(name)
