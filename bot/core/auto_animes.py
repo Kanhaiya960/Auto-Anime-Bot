@@ -113,7 +113,6 @@ async def fencode(fname, fpath, message, m):
         await bot.send_video(
             chat_id=message.chat.id,
             video=out_path,
-            thumb=None,
             caption=f"‣ <b>File Name:</b> <i>{fname}</i>",
             duration=int(duration),
             width=width,
