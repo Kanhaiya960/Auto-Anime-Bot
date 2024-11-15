@@ -6,7 +6,7 @@ from os import path as ospath, execl, kill
 from sys import executable
 from signal import SIGKILL
 
-from bot import bot, Var, bot_loop, sch, LOGS, ffQueue, ffLock, ffpids_cache, ff_queued
+from bot import bot, Var, bot_loop, LOGS, ffQueue, ffLock, ffpids_cache, ff_queued, #sch
 from bot.core.auto_animes import fetch_animes
 from bot.core.func_utils import clean_up, new_task, editMessage
 from bot.modules.up_posts import upcoming_animes
@@ -53,11 +53,11 @@ async def queue_loop():
         await asleep(10)
 
 async def main():
-    sch.add_job(upcoming_animes, "cron", hour=0, minute=30)
+    #sch.add_job(upcoming_animes, "cron", hour=0, minute=30)
     await bot.start()
     await restart()
     LOGS.info('Auto Anime Bot Started!')
-    sch.start()
+    #sch.start()
     bot_loop.create_task(queue_loop())
     await fetch_animes()
     await idle()
