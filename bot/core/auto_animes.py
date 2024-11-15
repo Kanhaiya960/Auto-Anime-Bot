@@ -16,6 +16,7 @@ from .text_utils import TextEditor
 from .ffencoder import FFEncoder
 from .tguploader import TgUploader
 from .reporter import rep
+from .utils import progress_for_pyrogram
 
 btn_formatter = {
     '1080':'𝟭𝟬𝟴𝟬𝗽', 
@@ -80,6 +81,7 @@ async def fencode(fname, fpath, message, m):
     await asleep(1.5)
 
     try:
+        start_time = time.time()
         # Upload the encoded file using Pyrogram's send_video
         await bot.send_document(
             chat_id=message.chat.id,
@@ -87,6 +89,8 @@ async def fencode(fname, fpath, message, m):
             thumb="thumb.jpg" if ospath.exists("thumb.jpg") else None,                  
             force_document=True,
             caption=f"‣ <b>File Name:</b> <i>{fname}</i>\n‣ <b>Status:</b> Uploaded Successfully.",
+            progress=progress_for_pyrogram,
+            progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
         )
     except Exception as e:
         await message.reply(
@@ -100,7 +104,8 @@ async def fencode(fname, fpath, message, m):
 
     # Release the lock once the task is completed
     ffLock.release()
-    await stat_msg.edit_text(
+    await stat_msg.delete()
+    await message.reply(
         f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Upload completed successfully.</i>"
     )
     
