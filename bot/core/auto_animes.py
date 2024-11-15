@@ -38,8 +38,8 @@ async def fencode(fname, fpath, message, m):
     
     encode = await m.edit_text(
         f"File downloaded successfully:\n\n"
-        f"    • <b>File Name:</b> {file_name}\n"
-        f"    • <b>File Path:</b> {file_path}"
+        f"    • <b>File Name:</b> {fname}\n"
+        f"    • <b>File Path:</b> {fpath}"
     )
     stat_msg = await bot.send_message(
         message.chat.id,
