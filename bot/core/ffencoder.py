@@ -58,8 +58,7 @@ class FFEncoder:
 <blockquote>   ‣ <b>Size :</b> {convertBytes(ensize)} out of ~ {convertBytes(tsize)}
     ‣ <b>Speed :</b> {convertBytes(speed)}/s
     ‣ <b>Time Took :</b> {convertTime(diff)}
-    ‣ <b>Time Left :</b> {convertTime(eta)}</blockquote>
-<blockquote>‣ <b>File(s) Encoded:</b> <code>{Var.QUALS.index(self.__qual)} / {len(Var.QUALS)}</code></blockquote>"""
+    ‣ <b>Time Left :</b> {convertTime(eta)}</blockquote>"""
             
                 await editMessage(self.message, progress_str)
                 if (prog := findall(r"progress=(\w+)", text)) and prog[-1] == 'end':
