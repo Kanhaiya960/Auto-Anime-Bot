@@ -17,6 +17,7 @@ ffargs = {
     '720': Var.FFCODE_720,
     '480': Var.FFCODE_480,
     '360': Var.FFCODE_360,
+    '361': Var.FFCODE_361,
 }
 
 class FFEncoder:
