@@ -132,7 +132,8 @@ async def add_to_task(client, message):
 @bot.on_message((document | video) & private & user(Var.ADMINS))
 @new_task
 async def download_file(client, message):
-     print(message) 
+     await sendMessage(message, f"<i><b>Task Added Successfully! {message} </b></i>")
+
 
 
 @bot.on_message(command('addtask') & private & user(Var.ADMINS))
