@@ -67,7 +67,7 @@ async def fencode(fname, fpath, message):
 
     try:
         # Start the encoding process
-        out_path = await FFEncoder(stat_msg, fpath, fname, "361").start_encode()
+        out_path = await FFEncoder(stat_msg, fpath, fname, "360").start_encode()
     except Exception as e:
         await stat_msg.delete()
         ffLock.release()
