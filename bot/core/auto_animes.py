@@ -33,10 +33,13 @@ async def fetch_animes():
                 if (info := await getfeed(link, 0)):
                     bot_loop.create_task(get_animes(info.title, info.link))
 
-async def fencode(fname, fpath, message):
+async def fencode(fname, fpath, message, m):
     # Notify the user that encoding has started
-    encode = await bot.send_message(
-        chat_id=message.chat.id, text="<i><b>Task encoding.......!</b></i>"
+    
+    encode = await m.edit_text(
+        f"File downloaded successfully:\n\n"
+        f"    • <b>File Name:</b> {file_name}\n"
+        f"    • <b>File Path:</b> {file_path}"
     )
     stat_msg = await bot.send_message(
         message.chat.id,
@@ -60,7 +63,7 @@ async def fencode(fname, fpath, message):
     # Acquire the lock for the current encoding task
     await ffLock.acquire()
     await stat_msg.edit_text(
-        f"‣ <b>Anime Name :</b> <b><i>{fname}</i></b>\n\n<i>Ready to Encode...</i>"
+        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Ready to Encode...</i>"
     )
 
     await asleep(1.5)
@@ -98,7 +101,7 @@ async def fencode(fname, fpath, message):
     # Release the lock once the task is completed
     ffLock.release()
     await stat_msg.edit_text(
-        f"‣ <b>Anime Name :</b> <b><i>{fname}</i></b>\n\n<i>Upload completed successfully.</i>"
+        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Upload completed successfully.</i>"
     )
     
 
