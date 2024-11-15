@@ -77,7 +77,7 @@ if not ospath.isdir("downloads/"):
 try:
     bot = Client(name="AutoAniAdvance", api_id=Var.API_ID, api_hash=Var.API_HASH, bot_token=Var.BOT_TOKEN, plugins=dict(root="bot/modules"), parse_mode=ParseMode.HTML)
     bot_loop = bot.loop
-    sch = AsyncIOScheduler(timezone="Asia/Kolkata", event_loop=bot_loop)
+    #sch = AsyncIOScheduler(timezone="Asia/Kolkata", event_loop=bot_loop)
 except Exception as ee:
     LOGS.error(str(ee))
     exit(1)
