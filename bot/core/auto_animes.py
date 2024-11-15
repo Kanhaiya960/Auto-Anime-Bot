@@ -45,7 +45,7 @@ async def fencode(fname, fpath, message, m):
     )
     stat_msg = await bot.send_message(
         message.chat.id,
-        f"‣ <b>Anime Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
+        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
     )
 
     encodeid = encode.id
