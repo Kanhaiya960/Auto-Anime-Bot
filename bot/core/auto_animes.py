@@ -1,6 +1,7 @@
 import os
 import time
 from moviepy.editor import VideoFileClip
+from PIL import Image
 from asyncio import gather, create_task, sleep as asleep, Event
 from asyncio.subprocess import PIPE
 from os import path as ospath, system
@@ -28,6 +29,19 @@ btn_formatter = {
     '360':'𝟯𝟲𝟬𝗽'
 }
 
+async def download_thumbnail(video, thumbnail_path="thumbnail.jpg"):
+    try:
+        clip = VideoFileClip(video)
+        duration = clip.duration
+        thumbnail_time = duration / 2
+        frame = clip.get_frame(thumbnail_time)
+        image = Image.fromarray(frame)
+        image.save(thumbnail_path)
+        clip.close()
+        return thumbnail_path 
+    except Exception as e:
+        print(f"Error generating thumbnail: {e}")
+        return None
 
 def get_video_info(video_path):
     try:
@@ -100,6 +114,8 @@ async def fencode(fname, fpath, message, m):
     try:
         start_time = time.time()
         duration, width, height = get_video_info(out_path)
+        thumbnail_path = await download_thumbnail(out_path)
+        
         # Upload the encoded file using Pyrogram's send_video
         #await bot.send_document(
         #    chat_id=message.chat.id,
@@ -113,6 +129,7 @@ async def fencode(fname, fpath, message, m):
         await bot.send_video(
             chat_id=message.chat.id,
             video=out_path,
+            thumb=thumbnail_path
             caption=f"‣ <b>File Name:</b> <i>{fname}</i>",
             duration=int(duration),
             width=width,
@@ -131,6 +148,7 @@ async def fencode(fname, fpath, message, m):
         return
     finally:
             await aioremove(out_path)
+            await aioremove(thumbnail_path)
 
     # Release the lock once the task is completed
     ffLock.release()
