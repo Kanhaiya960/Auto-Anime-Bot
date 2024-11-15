@@ -134,6 +134,7 @@ async def add_to_task(client, message):
 @new_task
 async def dwe_file(client, message):
     try:
+        m = await message.reply("File Recieved and Start Downloading.....")
         # Download the file
         file_path = await client.download_media(message)
     except Exception as e:
@@ -148,7 +149,7 @@ async def dwe_file(client, message):
     )
 
     # Start the encoding task
-    encode_task = bot_loop.create_task(fencode(file_name, file_path, message))
+    encode_task = bot_loop.create_task(fencode(file_name, file_path, message, m))
     
 
 
