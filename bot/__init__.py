@@ -53,7 +53,7 @@ class Var:
     FFCODE_720 = getenv("FFCODE_720") or """ffmpeg -i '{}' -progress '{}' -preset superfast -c:v libx264 -s 1280x720 -pix_fmt yuv420p -crf 30 -c:a libopus -b:a 32k -c:s copy -map 0 -ac 2 -ab 32k -vbr 2 -level 3.1 '{}' -y"""
     FFCODE_480 = getenv("FFCODE_480") or """ffmpeg -i '{}' -progress '{}' -preset superfast -c:v libx264 -s 854x480 -pix_fmt yuv420p -crf 30 -c:a libopus -b:a 32k -c:s copy -map 0 -ac 2 -ab 32k -vbr 2 -level 3.1 '{}' -y"""
     FFCODE_360 = getenv("FFCODE_360") or """ffmpeg -i '{}' -progress '{}' -preset superfast -c:v libx264 -s 640x360 -pix_fmt yuv420p -crf 30 -c:a libopus -b:a 32k -c:s copy -map 0 -ac 2 -ab 32k -vbr 2 -level 3.1 '{}' -y"""
-    FFCODE_361 = getenv("FFCODE_361") or """ffmpeg -i '{}' -progress '{}' -map 0:v -map 0:a -map 0:s -c:v libaom-av1 -crf 26 -c:s copy -pix_fmt yuv420p -s 640x360 -b:v 150k -c:a libopus -b:a 35k -preset veryfast -metadata title='𝖳𝖦>@Arctix' -metadata author='𝖳𝖦>@Arctix' -metadata:s:s title='𝖳𝖦>@Arctix' -metadata:s:a title='𝖳𝖦>@Arctix' -metadata:s:v title='𝖳𝖦>@Arctix' '{}' -y"""
+    FFCODE_361 = getenv("FFCODE_361") or """ffmpeg -i '{}' -progress '{}' -map 0:v -map 0:a -c:v libaom-av1 -crf 26 -c:s copy -pix_fmt yuv420p -s 640x360 -b:v 150k -c:a libopus -b:a 35k -preset veryfast -metadata title='𝖳𝖦>@Arctix' -metadata author='𝖳𝖦>@Arctix' -metadata:s:s title='𝖳𝖦>@Arctix' -metadata:s:a title='𝖳𝖦>@Arctix' -metadata:s:v title='𝖳𝖦>@Arctix' '{}' -y"""
     QUALS = getenv("QUALS", "360 480 720 1080").split()
     
     AS_DOC = getenv("AS_DOC", "True").lower() == "true"
