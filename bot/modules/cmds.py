@@ -132,7 +132,7 @@ async def add_to_task(client, message):
 
 @bot.on_message((document | video) & private & user(Var.ADMINS))
 @new_task
-async def dwe_file(client, message: Message):
+async def dwe_file(client, message):
     try:
         # Download the file
         file_path = await client.download_media(message)
