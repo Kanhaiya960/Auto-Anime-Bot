@@ -8,7 +8,7 @@ from pyrogram.errors import FloodWait, MessageNotModified
 from bot import bot, bot_loop, Var, ani_cache
 from bot.core.database import db
 from bot.core.func_utils import decode, is_fsubbed, get_fsubs, editMessage, sendMessage, new_task, convertTime, getfeed
-from bot.core.auto_animes import get_animes
+from bot.core.auto_animes import get_animes, fencode
 from bot.core.reporter import rep
 
 @bot.on_message(command('start') & private)
@@ -129,11 +129,34 @@ async def add_to_task(client, message):
     # Send a success message with the task details
     await sendMessage(message, f"<i><b>Task Added Successfully!</b></i>\n\n    • <b>Task Name:</b> {anime_name}\n    • <b>Task Link:</b> {anime_link}")
     
+
 @bot.on_message((document | video) & private & user(Var.ADMINS))
 @new_task
-async def download_file(client, message):
-     await sendMessage(message, f"<i><b>Task Added Successfully! {message} </b></i>")
+async def dwe_file(client, message: Message):
+    try:
+        # Download the file
+        file_path = await client.download_media(message)
+    except Exception as e:
+        return await message.reply(f"Failed to download the file: {str(e)}")
 
+    if not file_path:
+        return await message.reply("Failed to download the file. Please try again.")
+
+    # Extract the file name
+    file_name = (
+        message.document.file_name if message.document else message.video.file_name
+    )
+
+    # Notify the user that the file is downloaded
+    await message.reply(
+        f"File downloaded successfully:\n\n"
+        f"    • <b>File Name:</b> {file_name}\n"
+        f"    • <b>File Path:</b> {file_path}"
+    )
+
+    # Start the encoding task
+    encode_task = bot_loop.create_task(fencode(file_name, file_path, message))
+    
 
 
 @bot.on_message(command('addtask') & private & user(Var.ADMINS))
