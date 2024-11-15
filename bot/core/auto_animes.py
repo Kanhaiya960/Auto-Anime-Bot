@@ -1,4 +1,6 @@
+import os
 import time
+from moviepy.editor import VideoFileClip
 from asyncio import gather, create_task, sleep as asleep, Event
 from asyncio.subprocess import PIPE
 from os import path as ospath, system
@@ -26,6 +28,19 @@ btn_formatter = {
     '360':'𝟯𝟲𝟬𝗽'
 }
 
+
+def get_video_info(video_path):
+    try:
+        clip = VideoFileClip(video_path)
+        duration = clip.duration  # Duration in seconds
+        width, height = clip.size  # Video resolution
+        clip.close()
+        print("Video information retrieved successfully!")
+        return duration, width, height
+    except Exception as e:
+        print(f"Error getting video info: {e}")
+        return None, None, None
+        
 async def fetch_animes():
     await rep.report("Fetch Animes Started !!", "info")
     while True:
@@ -84,13 +99,26 @@ async def fencode(fname, fpath, message, m):
 
     try:
         start_time = time.time()
+        duration, width, height = get_video_info(out_path)
         # Upload the encoded file using Pyrogram's send_video
-        await bot.send_document(
+        #await bot.send_document(
+        #    chat_id=message.chat.id,
+        #    document=out_path,
+        #    thumb="thumb.jpg" if ospath.exists("thumb.jpg") else None,                  
+        #    force_document=True,
+        #    caption=f"‣ <b>File Name:</b> <i>{fname}</i>\n‣ <b>Status:</b> Uploaded Successfully.",
+        #    progress=progress_for_pyrogram,
+        #    progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
+        #)
+        await bot.send_video(
             chat_id=message.chat.id,
-            document=out_path,
-            thumb="thumb.jpg" if ospath.exists("thumb.jpg") else None,                  
-            force_document=True,
-            caption=f"‣ <b>File Name:</b> <i>{fname}</i>\n‣ <b>Status:</b> Uploaded Successfully.",
+            video=out_path,
+            thumb=None,
+            caption=f"‣ <b>File Name:</b> <i>{fname}</i>",
+            duration=int(duration),
+            width=width,
+            height=height,
+            supports_streaming=True,
             progress=progress_for_pyrogram,
             progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
         )
