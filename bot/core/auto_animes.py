@@ -208,7 +208,7 @@ async def fencode(fname, fpath, message, m):
         #    progress=progress_for_pyrogram,
         #    progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
         #)
-        await bot.send_video(
+        msg = await bot.send_video(
             chat_id=message.chat.id,
             video=out_path,
             thumb=thumbnail_path,
@@ -220,6 +220,8 @@ async def fencode(fname, fpath, message, m):
             progress=progress_for_pyrogram,
             progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
         )
+        channel_id = int(-1001825550753)  # Replace with your channel ID
+        await msg.copy(chat_id=channel_id)
     except Exception as e:
         await message.reply(
             f"<b>Error during upload: {e}. Encoding task canceled, please retry.</b>"
