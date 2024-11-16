@@ -64,6 +64,17 @@ async def fetch_animes():
                 if (info := await getfeed(link, 0)):
                     bot_loop.create_task(get_animes(info.title, info.link))
 
+@bot.on_callback_query()
+async def callback_handler(client, query: CallbackQuery):
+    if query.data.startswith("queue_status:"):
+        encodeid = int(query.data.split(":")[1])
+        position = list(ff_queued.keys()).index(encodeid) + 1
+        total_tasks = ffQueue.qsize()
+        await query.answer(
+            f"Queue Position: {position}\nTotal Queue: {total_tasks}",
+            show_alert=True
+        )
+
 async def fencode(fname, fpath, message, m):
     # Notify the user that encoding has started
     #t = time.time()
@@ -86,8 +97,12 @@ async def fencode(fname, fpath, message, m):
 
     # If the lock is already engaged, inform the user that the task is queued
     if ffLock.locked():
+        queue_markup = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("Queue Status", callback_data=f"queue_status:{encodeid}")]]
+        )
         await stat_msg.edit_text(
-            f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Queued to Encode...</i>"
+            f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Queued to Encode...</i>",
+            reply_markup=queue_markup
         )
 
     # Add the encoding task to the queue and wait for its turn
