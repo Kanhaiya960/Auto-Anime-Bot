@@ -90,9 +90,9 @@ async def callback_handler(client, query: CallbackQuery):
                 await encoder.cancel_encode()
                 await query.answer("Encoding process has been canceled.", show_alert=True)
             else:
-                await query.answer("No encoding task found to cancel.", show_alert=True)
+                await query.answer(f"No encoding {encodeid} task found to cancel.", show_alert=True)
         else:
-            await query.answer("No encoding task found to cancel.", show_alert=True)
+            await query.answer(f"No encoding {encodeid} task found to cancel.", show_alert=True)
     
 async def fencode(fname, fpath, message, m):
     # Notify the user that encoding has started
