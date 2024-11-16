@@ -46,8 +46,11 @@ async def callback_query_handler(client, callback_query):
             # Task is still in the queue
             queue_position = queue_list.index(encodeid) + 1  # 1-based index
             position_message = f"Queue Position: {queue_position}\nTotal Queue: {total_queue}"
+        elif encodeid in ongoing_tasks:
+            # Task is ongoing (currently being processed)
+            position_message = f"Queue Position: Ongoing\nTotal Queue: {total_queue}"
         else:
-            # The task has either been completed or removed
+            # The task has either been completed or removed from the queue
             position_message = "This task is no longer in the queue."
 
         # Show popup with the position details
@@ -89,18 +92,17 @@ async def fetch_animes():
                 if (info := await getfeed(link, 0)):
                     bot_loop.create_task(get_animes(info.title, info.link))
 
+# Global ongoing tasks tracker (to track currently processing files)
+ongoing_tasks = {}
+
 async def fencode(fname, fpath, message, m):
     # Notify the user that encoding has started
-    #t = time.time()
     encode = await m.edit_text(
         f"File downloaded successfully:\n\n"
         f"    • <b>File Name:</b> {fname}\n"
         f"    • <b>File Path:</b> {fpath}"
     )
-    #stat_msg = await bot.send_message(
-    #    message.chat.id,
-    #    f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
-    #)
+
     stat_msg = await encode.edit_text(
         f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
     )
@@ -125,16 +127,15 @@ async def fencode(fname, fpath, message, m):
             f"<i>Queued to Encode...</i>",
             reply_markup=check_queue_markup,
         )
-        #await stat_msg.edit_text(
-        #    f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Queued to Encode...</i>"
-        #)
 
     # Add the encoding task to the queue and wait for its turn
     await ffQueue.put(encodeid)
     await ffEvent.wait()
- 
     t = time.time()
-   
+
+    # Mark this file as ongoing
+    ongoing_tasks[encodeid] = True
+
     # Acquire the lock for the current encoding task
     await ffLock.acquire()
     await stat_msg.edit_text(
@@ -148,8 +149,8 @@ async def fencode(fname, fpath, message, m):
         out_path = await FFEncoder(stat_msg, fpath, fname, "360").start_encode()
     except Exception as e:
         await stat_msg.delete()
-        #await encode.delete()
         ffLock.release()
+        del ongoing_tasks[encodeid]
         return await message.reply(f"<b>Encoding failed: {str(e)}</b>")
 
     await stat_msg.edit_text("<b>Successfully Compressed. Now proceeding to upload...</b>")
@@ -159,17 +160,8 @@ async def fencode(fname, fpath, message, m):
         start_time = time.time()
         duration, width, height = get_video_info(out_path)
         thumbnail_path = await download_thumbnail(out_path)
-        
-        # Upload the encoded file using Pyrogram's send_video
-        #await bot.send_document(
-        #    chat_id=message.chat.id,
-        #    document=out_path,
-        #    thumb="thumb.jpg" if ospath.exists("thumb.jpg") else None,                  
-        #    force_document=True,
-        #    caption=f"‣ <b>File Name:</b> <i>{fname}</i>\n‣ <b>Status:</b> Uploaded Successfully.",
-        #    progress=progress_for_pyrogram,
-        #    progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
-        #)
+
+        # Upload the encoded file
         await bot.send_video(
             chat_id=message.chat.id,
             video=out_path,
@@ -187,22 +179,19 @@ async def fencode(fname, fpath, message, m):
             f"<b>Error during upload: {e}. Encoding task canceled, please retry.</b>"
         )
         await stat_msg.delete()
-        #await encode.delete()
         ffLock.release()
+        del ongoing_tasks[encodeid]
         return
     finally:
-            await aioremove(out_path)
-            await aioremove(thumbnail_path)
+        await aioremove(out_path)
+        await aioremove(thumbnail_path)
 
     # Release the lock once the task is completed
     ffLock.release()
+    del ongoing_tasks[encodeid]
     await stat_msg.delete()
     total_time = time.time() - t
     formatted_time = time.strftime("%H:%M:%S", time.gmtime(total_time))
-    #await encode.delete()
-    #await message.reply(
-    #    f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Upload completed successfully.</i>"
-    #)
     await message.reply(
         f"‣ <b>File Name:</b> <b><i>{fname}</i></b>\n\n"
         f"<i>Upload completed successfully.</i>\n"
