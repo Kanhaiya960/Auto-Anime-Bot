@@ -66,7 +66,7 @@ async def fetch_animes():
 
 async def fencode(fname, fpath, message, m):
     # Notify the user that encoding has started
-    t = time.time()
+    #t = time.time()
     encode = await m.edit_text(
         f"File downloaded successfully:\n\n"
         f"    • <b>File Name:</b> {fname}\n"
@@ -93,7 +93,9 @@ async def fencode(fname, fpath, message, m):
     # Add the encoding task to the queue and wait for its turn
     await ffQueue.put(encodeid)
     await ffEvent.wait()
-
+ 
+    t = time.time()
+   
     # Acquire the lock for the current encoding task
     await ffLock.acquire()
     await stat_msg.edit_text(
