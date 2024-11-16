@@ -65,7 +65,7 @@ class FFEncoder:
                 cancel_markup = InlineKeyboardMarkup([
                     [InlineKeyboardButton("Cancel Encoding", callback_data=f"cancel_encoding:{encodeid}")]
                 ])
-                await editMessage(self.message, progress_str, reply_markup=cancel_markup)
+                await editMessage(self.message, progress_str, buttons=cancel_markup)
                 if (prog := findall(r"progress=(\w+)", text)) and prog[-1] == 'end':
                     break
             await asleep(8)
