@@ -72,8 +72,11 @@ async def fencode(fname, fpath, message, m):
         f"    • <b>File Name:</b> {fname}\n"
         f"    • <b>File Path:</b> {fpath}"
     )
-    stat_msg = await bot.send_message(
-        message.chat.id,
+    #stat_msg = await bot.send_message(
+    #    message.chat.id,
+    #    f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
+    #)
+    stat_msg = await encode.edit_text(
         f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
     )
 
@@ -104,7 +107,7 @@ async def fencode(fname, fpath, message, m):
         out_path = await FFEncoder(stat_msg, fpath, fname, "360").start_encode()
     except Exception as e:
         await stat_msg.delete()
-        await encode.delete()
+        #await encode.delete()
         ffLock.release()
         return await message.reply(f"Encoding failed: {str(e)}")
 
@@ -143,7 +146,7 @@ async def fencode(fname, fpath, message, m):
             f"Error during upload: {e}. Encoding task canceled, please retry."
         )
         await stat_msg.delete()
-        await encode.delete()
+        #await encode.delete()
         ffLock.release()
         return
     finally:
@@ -153,7 +156,7 @@ async def fencode(fname, fpath, message, m):
     # Release the lock once the task is completed
     ffLock.release()
     await stat_msg.delete()
-    await encode.delete()
+    #await encode.delete()
     await message.reply(
         f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Upload completed successfully.</i>"
     )
