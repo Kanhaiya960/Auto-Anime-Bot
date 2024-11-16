@@ -118,8 +118,8 @@ async def fencode(fname, fpath, message, m):
             reply_markup=queue_markup
         )
 
-    encoder = FFEncoder(stat_msg, fpath, fname, encodeid, "360")
-    ff_encoders[encodeid] = encoder
+    #encoder = FFEncoder(stat_msg, fpath, fname, encodeid, "360")
+    #ff_encoders[encodeid] = encoder
     
     # Add the encoding task to the queue and wait for its turn
     await ffQueue.put(encodeid)
@@ -137,11 +137,10 @@ async def fencode(fname, fpath, message, m):
 
     try:
         # Start the encoding process
-        #out_path = await FFEncoder(stat_msg, fpath, fname, encodeid, "360").start_encode()
-        out_path = await encoder.start_encode()
+        out_path = await FFEncoder(stat_msg, fpath, fname, encodeid, "360").start_encode()    
     except Exception as e:
         await stat_msg.delete()
-        #await aioremove(out_path)
+        await aioremove(out_path)
         await aioremove(fpath)
         #await encode.delete()
         ffLock.release()
