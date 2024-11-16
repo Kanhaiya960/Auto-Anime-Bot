@@ -52,7 +52,7 @@ class FFEncoder:
     
                 bar = floor(percent/8)*"█" + (12 - floor(percent/8))*"▒"
                 
-                progress_str = f"""<blockquote>‣ <b>Anime Name :</b> <b><i>{self.__name}</i></b></blockquote>
+                progress_str = f"""<blockquote>‣ <b>File Name :</b> <b><i>{self.__name}</i></b></blockquote>
 <blockquote>‣ <b>Status :</b> <i>Encoding</i>
     <code>[{bar}]</code> {percent}%</blockquote> 
 <blockquote>   ‣ <b>Size :</b> {convertBytes(ensize)} out of ~ {convertBytes(tsize)}
