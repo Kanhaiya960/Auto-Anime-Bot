@@ -7,6 +7,8 @@ from aiofiles.os import remove as aioremove, rename as aiorename
 from shlex import split as ssplit
 from asyncio import sleep as asleep, gather, create_subprocess_shell, create_task
 from asyncio.subprocess import PIPE
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 
 from bot import Var, bot_loop, ffpids_cache, LOGS
 from .func_utils import mediainfo, convertBytes, convertTime, sendMessage, editMessage
@@ -21,7 +23,7 @@ ffargs = {
 }
 
 class FFEncoder:
-    def __init__(self, message, path, name, qual):
+    def __init__(self, message, path, name, encodeid, qual):
         self.__proc = None
         self.is_cancelled = False
         self.message = message
@@ -32,6 +34,7 @@ class FFEncoder:
         self.out_path = ospath.join("encode", name)
         self.__prog_file = 'prog.txt'
         self.__start_time = time()
+        self.__encodeid = encodeid
 
     async def progress(self):
         self.__total_time = await mediainfo(self.dl_path, get_duration=True)
@@ -59,8 +62,10 @@ class FFEncoder:
     ‣ <b>Speed :</b> {convertBytes(speed)}/s
     ‣ <b>Time Took :</b> {convertTime(diff)}
     ‣ <b>Time Left :</b> {convertTime(eta)}</blockquote>"""
-            
-                await editMessage(self.message, progress_str)
+                cancel_markup = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("Cancel Encoding", callback_data=f"cancel_encoding:{encodeid}")]
+                ])
+                await editMessage(self.message, progress_str, reply_markup=cancel_markup)
                 if (prog := findall(r"progress=(\w+)", text)) and prog[-1] == 'end':
                     break
             await asleep(8)
