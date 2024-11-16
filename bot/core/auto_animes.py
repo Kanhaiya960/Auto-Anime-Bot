@@ -1,5 +1,7 @@
 import os
 import time
+import asyncio
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from moviepy.editor import VideoFileClip
 from PIL import Image
 from asyncio import gather, create_task, sleep as asleep, Event
@@ -28,6 +30,30 @@ btn_formatter = {
     '480':'𝟰𝟴𝟬𝗽',
     '360':'𝟯𝟲𝟬𝗽'
 }
+
+@bot.on_callback_query()
+async def callback_query_handler(client, callback_query):
+    data = callback_query.data
+
+    if data.startswith("check_queue:"):
+        encodeid = data.split(":")[1]  # Extract the encode ID from callback data
+
+        # Calculate real-time queue position
+        ongoing_task = ffLock.locked()  # Check if an encoding task is ongoing
+        queue_list = list(ffQueue._queue)  # Current queue state
+        total_queue = len(queue_list) + (1 if ongoing_task else 0)  # Total tasks
+
+        try:
+            # Find the position of the encodeid in the queue (1-based index)
+            queue_position = queue_list.index(encodeid) + (2 if ongoing_task else 1)
+            position_message = f"Queue Position: {queue_position}\nTotal Queue: {total_queue}"
+        except ValueError:
+            # Task is either completed or currently being encoded
+            position_message = f"Queue Position: Ongoing\nTotal Queue: {total_queue}"
+
+        # Show popup with the position details
+        await callback_query.answer(position_message, show_alert=True)
+
 
 async def download_thumbnail(video, thumbnail_path="thumbnail.jpg"):
     try:
@@ -86,9 +112,23 @@ async def fencode(fname, fpath, message, m):
 
     # If the lock is already engaged, inform the user that the task is queued
     if ffLock.locked():
-        await stat_msg.edit_text(
-            f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Queued to Encode...</i>"
+        check_queue_markup = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "Check Queue", callback_data=f"check_queue:{encodeid}"
+                    )
+                ]
+            ]
         )
+        await stat_msg.edit_text(
+            f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n"
+            f"<i>Queued to Encode...</i>",
+            reply_markup=check_queue_markup,
+        )
+        #await stat_msg.edit_text(
+        #    f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Queued to Encode...</i>"
+        #)
 
     # Add the encoding task to the queue and wait for its turn
     await ffQueue.put(encodeid)
