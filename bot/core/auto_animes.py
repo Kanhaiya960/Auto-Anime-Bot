@@ -93,114 +93,117 @@ async def callback_handler(client, query: CallbackQuery):
 
 
 async def fencode(fname, fpath, message, m):
-    # Notify the user that encoding has started
-    #t = time.time()
-    encode = await m.edit_text(
-        f"File downloaded successfully:\n\n"
-        f"    • <b>File Name:</b> {fname}\n"
-        f"    • <b>File Path:</b> {fpath}"
-    )
-    stat_msg = await m.edit_text(
-        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
-    )
-    
-    encodeid = encode.id
-    ffEvent = Event()
-    ff_queued[encodeid] = ffEvent
-
-    # If the lock is already engaged, inform the user that the task is queued
-    if ffLock.locked():
-        queue_markup = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Queue Status", callback_data=f"queue_status:{encodeid}")]]
-        )
-        await stat_msg.edit_text(
-            f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Queued to Encode...</i>",
-            reply_markup=queue_markup
-        )
-
-    encoder = FFEncoder(stat_msg, fpath, fname, encodeid, "360")
-    ff_encoders[encodeid] = encoder
-    
-    # Add the encoding task to the queue and wait for its turn
-    await ffQueue.put(encodeid)
-    await ffEvent.wait()
- 
-    t = time.time()
-   
-    # Acquire the lock for the current encoding task
-    await ffLock.acquire()
-    await stat_msg.edit_text(
-        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Ready to Encode...</i>"
-    )
-
-    await asleep(1.5)
-
     try:
-        # Start the encoding process
-        #out_path = await FFEncoder(stat_msg, fpath, fname, encodeid, "360").start_encode()
-        out_path = await encoder.start_encode()
-    except Exception as e:
-        await stat_msg.delete()
-        #await encode.delete()
-        ffLock.release()
-        return await message.reply(f"<b>Encoding failed: {str(e)}</b>")
-
-    await stat_msg.edit_text("<b>Successfully Compressed. Now proceeding to upload...</b>")
-    await asleep(1.5)
-
-    try:
-        start_time = time.time()
-        duration, width, height = get_video_info(out_path)
-        thumbnail_path = await download_thumbnail(out_path)
+        # Notify the user that encoding has started
+        encode = await m.edit_text(
+            f"File downloaded successfully:\n\n"
+            f"    • <b>File Name:</b> {fname}\n"
+            f"    • <b>File Path:</b> {fpath}"
+        )
+        stat_msg = await m.edit_text(
+            f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
+        )
         
-        # Upload the encoded file using Pyrogram's send_video
-        #await bot.send_document(
-        #    chat_id=message.chat.id,
-        #    document=out_path,
-        #    thumb="thumb.jpg" if ospath.exists("thumb.jpg") else None,                  
-        #    force_document=True,
-        #    caption=f"‣ <b>File Name:</b> <i>{fname}</i>\n‣ <b>Status:</b> Uploaded Successfully.",
-        #    progress=progress_for_pyrogram,
-        #    progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
-        #)
-        await bot.send_video(
-            chat_id=message.chat.id,
-            video=out_path,
-            thumb=thumbnail_path,
-            caption=f"‣ <b>File Name:</b> <i>{fname}</i>",
-            duration=int(duration),
-            width=width,
-            height=height,
-            supports_streaming=True,
-            progress=progress_for_pyrogram,
-            progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
-        )
-    except Exception as e:
-        await message.reply(
-            f"<b>Error during upload: {e}. Encoding task canceled, please retry.</b>"
-        )
-        await stat_msg.delete()
-        #await encode.delete()
-        ffLock.release()
-        return
-    finally:
-        await aioremove(out_path)
-        await aioremove(thumbnail_path)
+        encodeid = encode.id
+        ffEvent = Event()
+        ff_queued[encodeid] = ffEvent
 
-    # Release the lock once the task is completed
-    ffLock.release()
-    await stat_msg.delete()
-    total_time = time.time() - t
-    formatted_time = time.strftime("%H:%M:%S", time.gmtime(total_time))
-    #await encode.delete()
-    #await message.reply(
-    #    f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Upload completed successfully.</i>"
-    #)
-    await message.reply(
-        f"‣ <b>File Name:</b> <b><i>{fname}</i></b>\n\n"
-        f"<i>Upload completed successfully.</i>\n"
-        f"‣ <b>Total Time Taken:</b> {formatted_time}"
-    )
+        # If the lock is already engaged, inform the user that the task is queued
+        if ffLock.locked():
+            queue_markup = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("Queue Status", callback_data=f"queue_status:{encodeid}")]]
+            )
+            await stat_msg.edit_text(
+                f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Queued to Encode...</i>",
+                reply_markup=queue_markup
+            )
+
+        # Initialize the encoder and add it to the dictionary
+        encoder = FFEncoder(stat_msg, fpath, fname, encodeid, "360")
+        ff_encoders[encodeid] = encoder
+        
+        # Add the encoding task to the queue and wait for its turn
+        await ffQueue.put(encodeid)
+        await ffEvent.wait()
+
+        # Acquire the lock for the current encoding task
+        await ffLock.acquire()
+        await stat_msg.edit_text(
+            f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Ready to Encode...</i>"
+        )
+
+        await asleep(1.5)
+
+        try:
+            # Start the encoding process
+            out_path = await encoder.start_encode()
+        except Exception as e:
+            # Handle encoding failure, release the lock and clean up
+            await stat_msg.delete()
+            ffLock.release()
+            await aioremove(fpath)  # Remove the original file in case of failure
+            return await message.reply(f"<b>Encoding failed: {str(e)}</b>")
+
+        await stat_msg.edit_text("<b>Successfully Compressed. Now proceeding to upload...</b>")
+        await asleep(1.5)
+
+        try:
+            # Get video info and thumbnail
+            start_time = time.time()
+            duration, width, height = get_video_info(out_path)
+            thumbnail_path = await download_thumbnail(out_path)
+
+            # Upload the encoded file using Pyrogram's send_video
+            await bot.send_video(
+                chat_id=message.chat.id,
+                video=out_path,
+                thumb=thumbnail_path,
+                caption=f"‣ <b>File Name:</b> <i>{fname}</i>",
+                duration=int(duration),
+                width=width,
+                height=height,
+                supports_streaming=True,
+                progress=progress_for_pyrogram,
+                progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
+            )
+
+        except Exception as e:
+            # Handle any error during upload
+            await message.reply(
+                f"<b>Error during upload: {e}. Encoding task canceled, please retry.</b>"
+            )
+            await stat_msg.delete()
+            await aioremove(out_path)  # Remove the encoded file in case of failure
+            await aioremove(thumbnail_path)  # Remove the thumbnail in case of failure
+            ffLock.release()
+            return
+        
+        finally:
+            # Clean up files after upload or error
+            await aioremove(out_path)
+            await aioremove(thumbnail_path)
+
+        # Release the lock once the task is completed
+        ffLock.release()
+        await stat_msg.delete()
+
+        # Calculate and format the total time taken
+        total_time = time.time() - start_time
+        formatted_time = time.strftime("%H:%M:%S", time.gmtime(total_time))
+
+        # Notify the user that the upload is complete
+        await message.reply(
+            f"‣ <b>File Name:</b> <b><i>{fname}</i></b>\n\n"
+            f"<i>Upload completed successfully.</i>\n"
+            f"‣ <b>Total Time Taken:</b> {formatted_time}"
+        )
+
+    except Exception as e:
+        # Catch any unforeseen errors and clean up
+        await message.reply(f"<b>Unexpected error: {str(e)}</b>")
+        await stat_msg.delete()
+        await aioremove(fpath)  # Remove the original file on unexpected errors
+        ffLock.release()
 
 
 
