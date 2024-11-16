@@ -75,25 +75,24 @@ async def callback_handler(client, query: CallbackQuery):
             show_alert=True
         )
     
-    elif query.data.startswith("cancel:"):
+    elif query.data.startswith("cancel_encoding:"):
         # Extract the file name (encoded filename)
-        fname = query.data.split(":")[1]
+        encodeid = int(query.data.split(":")[1])
 
-        # Find the FFEncoder task associated with this file
-        encoder = None
-        for task in ffQueue._queue:
-            if isinstance(task, FFEncoder) and task.__name == fname:
-                encoder = task
-                break
-
-        # If we found the encoder, cancel it
-        if encoder:
-            await encoder.cancel_encode()
-            await query.answer(f"Encoding for {fname} has been canceled.", show_alert=True)
-            await query.message.edit_text(f"<b>{fname}</b> encoding has been canceled.")
+        # Check if the encoding task is in progress and cancel it
+        if encodeid in ff_queued:
+            ffEvent = ff_queued.pop(encodeid)
+            ffEvent.set()  # Signal that the task can proceed to cancel it
+            
+            # Attempt to cancel the encoding task
+            if encodeid in ff_queued:
+                encoder = ff_queued[encodeid]
+                await encoder.cancel_encode()
+                await query.answer("Encoding process has been canceled.", show_alert=True)
+            else:
+                await query.answer("No encoding task found to cancel.", show_alert=True)
         else:
             await query.answer("No encoding task found to cancel.", show_alert=True)
-
     
 async def fencode(fname, fpath, message, m):
     # Notify the user that encoding has started
@@ -103,16 +102,11 @@ async def fencode(fname, fpath, message, m):
         f"    • <b>File Name:</b> {fname}\n"
         f"    • <b>File Path:</b> {fpath}"
     )
-    #stat_msg = await bot.send_message(
-    #    message.chat.id,
-    #    f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
-    #)
-    stat_msg = await encode.edit_text(
+    stat_msg = await bot.send_message(
+        message.chat.id,
         f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
     )
-    cancel_button = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("Cancel", callback_data=f"cancel:{fname}")]]
-    )
+    
     await stat_msg.edit_text(
         f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
         reply_markup=cancel_button
@@ -147,7 +141,7 @@ async def fencode(fname, fpath, message, m):
 
     try:
         # Start the encoding process
-        out_path = await FFEncoder(stat_msg, fpath, fname, "360").start_encode()
+        out_path = await FFEncoder(stat_msg, fpath, fname, encodeid, "360").start_encode()
     except Exception as e:
         await stat_msg.delete()
         #await encode.delete()
