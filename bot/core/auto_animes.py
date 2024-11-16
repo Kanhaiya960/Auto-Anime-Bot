@@ -28,7 +28,9 @@ btn_formatter = {
     '480':'𝟰𝟴𝟬𝗽',
     '360':'𝟯𝟲𝟬𝗽'
 }
+
 ff_encoders = {}
+file_path_cache = {}
 
 async def download_thumbnail(video, thumbnail_path="thumbnail.jpg"):
     try:
@@ -79,34 +81,40 @@ async def callback_handler(client, query: CallbackQuery):
     elif query.data.startswith("remove_task:"):
         data = query.data.split(":")
         encodeid = int(data[1])  # The encodeid
-        fpath = data[2]  # The file path passed in the button data
-
-        # Remove the encodeid from the queue and delete its associated file
-        temp_queue = []
-        removed = False
-        while not ffQueue.empty():
-            task = await ffQueue.get()
-            if task == encodeid:
-                removed = True  # Mark task as removed
-                continue  # Skip this task
-            temp_queue.append(task)
-
-        # Re-add the remaining tasks back to the queue
-        for task in temp_queue:
-            await ffQueue.put(task)
-
-        # Delete the file associated with the task if it was removed
-        if removed and os.path.exists(fpath):
-            try:
-                await aioremove(fpath)  # Remove the file
-                await query.answer("Task removed from the queue and file deleted.", show_alert=True)
-            except Exception as e:
-                await query.answer(f"Error deleting file: {e}", show_alert=True)
-        elif removed:
-            await query.answer("Task removed, but file not found.", show_alert=True)
+        fpath = file_path_cache.get(encodeid)  # Retrieve the file path from cache
         
-        # Delete the queue status message
-        await query.message.delete()
+        if fpath:
+            # Proceed with the removal of the task and file
+            temp_queue = []
+            removed = False
+            while not ffQueue.empty():
+                task = await ffQueue.get()
+                if task == encodeid:
+                    removed = True  # Mark task as removed
+                    continue  # Skip this task
+                temp_queue.append(task)
+
+            # Re-add the remaining tasks back to the queue
+            for task in temp_queue:
+                await ffQueue.put(task)
+
+            # Delete the file associated with the task
+            if removed and os.path.exists(fpath):
+                try:
+                    await aioremove(fpath)  # Remove the file
+                    await query.answer("Task removed from the queue and file deleted.", show_alert=True)
+                except Exception as e:
+                    await query.answer(f"Error deleting file: {e}", show_alert=True)
+            elif removed:
+                await query.answer("Task removed, but file not found.", show_alert=True)
+            
+            # Remove from the cache after the task is processed
+            file_path_cache.pop(encodeid, None)
+
+            # Delete the queue status message
+            await query.message.delete()
+        else:
+            await query.answer("File path not found in cache.", show_alert=True)
     
     elif query.data.startswith("cancel_encoding:"):
         # Extract the file name (encoded filename)
@@ -142,10 +150,11 @@ async def fencode(fname, fpath, message, m):
 
     # If the lock is already engaged, inform the user that the task is queued
     if ffLock.locked():
+        file_path_cache[encodeid] = fpath
         queue_markup = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("Queue Status", callback_data=f"queue_status:{encodeid}")],
-            [InlineKeyboardButton("Remove from Queue", callback_data=f"remove_task:{encodeid}:{fpath}")]
+            [InlineKeyboardButton("Remove from Queue", callback_data=f"remove_task:{encodeid}")]
         ]
         )
         await stat_msg.edit_text(
