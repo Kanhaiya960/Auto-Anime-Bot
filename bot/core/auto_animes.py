@@ -75,7 +75,31 @@ async def callback_handler(client, query: CallbackQuery):
             f"Queue Position: {position}\nTotal Queue: {total_tasks}",
             show_alert=True
         )
-    
+
+    elif query.data.startswith("remove_task:"):
+        encodeid = int(query.data.split(":")[1])
+
+        # Remove the encodeid from the queue
+        temp_queue = []
+        removed = False
+        while not ffQueue.empty():
+            task = await ffQueue.get()
+            if task == encodeid:
+                removed = True  # Mark task as removed
+                continue  # Skip this task
+            temp_queue.append(task)
+
+        # Re-add the remaining tasks back to the queue
+        for task in temp_queue:
+            await ffQueue.put(task)
+
+        # Notify user based on whether the task was removed
+        if removed:
+            await query.answer("Task removed from the queue.", show_alert=True)
+            await query.message.delete()  # Delete the queue status message
+        else:
+            await query.answer("Task not found in the queue.", show_alert=True)
+            
     elif query.data.startswith("cancel_encoding:"):
         # Extract the file name (encoded filename)
         encodeid = int(query.data.split(":")[1])
@@ -111,7 +135,10 @@ async def fencode(fname, fpath, message, m):
     # If the lock is already engaged, inform the user that the task is queued
     if ffLock.locked():
         queue_markup = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Queue Status", callback_data=f"queue_status:{encodeid}")]]
+        [
+            [InlineKeyboardButton("Queue Status", callback_data=f"queue_status:{encodeid}")],
+            [InlineKeyboardButton("Remove from Queue", callback_data=f"remove_task:{encodeid}")]
+        ]
         )
         await stat_msg.edit_text(
             f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Queued to Encode...</i>",
