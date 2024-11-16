@@ -102,15 +102,10 @@ async def fencode(fname, fpath, message, m):
         f"    • <b>File Name:</b> {fname}\n"
         f"    • <b>File Path:</b> {fpath}"
     )
-    stat_msg = await bot.send_message(
-        message.chat.id,
+    stat_msg = await encode.edit_text(
         f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
     )
     
-    await stat_msg.edit_text(
-        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
-        reply_markup=cancel_button
-    )
     encodeid = encode.id
     ffEvent = Event()
     ff_queued[encodeid] = ffEvent
