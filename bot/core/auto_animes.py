@@ -68,7 +68,7 @@ async def fetch_animes():
 async def callback_handler(client, query: CallbackQuery):
     if query.data.startswith("queue_status:"):
         encodeid = int(query.data.split(":")[1])
-        position = list(ff_queued.keys()).index(encodeid) + 1
+        position = list(ffQueue._queue).index(encodeid) + 1
         total_tasks = ffQueue.qsize()
         await query.answer(
             f"Queue Position: {position}\nTotal Queue: {total_tasks}",
