@@ -1,5 +1,6 @@
 import os
 import time
+import asyncio
 from moviepy.editor import VideoFileClip
 from PIL import Image
 from asyncio import gather, create_task, sleep as asleep, Event
@@ -85,17 +86,24 @@ async def fencode(fname, fpath, message, m):
     ff_queued[encodeid] = ffEvent
 
     # If the lock is already engaged, inform the user that the task is queued
-    if ffLock.locked():
-        await stat_msg.edit_text(
-            f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Queued to Encode...</i>"
-        )
+    async def update_queue_position():
+        while ffEvent.is_set() is False:  # Keep updating until the task starts
+            queue_position = list(ffQueue._queue).index(encodeid) + 1
+            await stat_msg.edit_text(
+                f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n"
+                f"<i>Queued to Encode... Position in queue: {queue_position}</i>"
+            )
+            await asyncio.sleep(2)  # Update every 2 seconds
+
+    # Start the background update task
+    position_update_task = asyncio.create_task(update_queue_position())
 
     # Add the encoding task to the queue and wait for its turn
     await ffQueue.put(encodeid)
     await ffEvent.wait()
- 
-    t = time.time()
-   
+
+    # Stop the background update task when the event is triggered
+    position_update_task.cancel()
     # Acquire the lock for the current encoding task
     await ffLock.acquire()
     await stat_msg.edit_text(
