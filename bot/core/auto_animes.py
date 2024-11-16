@@ -28,6 +28,7 @@ btn_formatter = {
     '480':'𝟰𝟴𝟬𝗽',
     '360':'𝟯𝟲𝟬𝗽'
 }
+ff_encoders = {}
 
 async def download_thumbnail(video, thumbnail_path="thumbnail.jpg"):
     try:
@@ -80,20 +81,17 @@ async def callback_handler(client, query: CallbackQuery):
         encodeid = int(query.data.split(":")[1])
 
         # Check if the encoding task is in progress and cancel it
-        if encodeid in ff_queued:
-            ffEvent = ff_queued.pop(encodeid)
-            ffEvent.set()  # Signal that the task can proceed to cancel it
-            
-            # Attempt to cancel the encoding task
-            if encodeid in ff_queued:
-                encoder = ff_queued[encodeid]
-                await encoder.cancel_encode()
-                await query.answer("Encoding process has been canceled.", show_alert=True)
-            else:
-                await query.answer(f"No encoding {encodeid} task found to cancel.", show_alert=True)
+        encodeid = int(query.data.split(":")[1])
+
+        # Check if the encoding task exists
+        if encodeid in ff_encoders:
+            encoder = ff_encoders[encodeid]  # Retrieve the FFEncoder instance
+            await encoder.cancel_encode()  # Call cancel_encode to stop the encoding
+            await query.answer("Encoding process has been canceled.", show_alert=True)
         else:
-            await query.answer(f"No encoding {encodeid} task found to cancel.", show_alert=True)
-    
+            await query.answer("No encoding task found to cancel.", show_alert=True)
+
+
 async def fencode(fname, fpath, message, m):
     # Notify the user that encoding has started
     #t = time.time()
@@ -120,6 +118,9 @@ async def fencode(fname, fpath, message, m):
             reply_markup=queue_markup
         )
 
+    encoder = FFEncoder(stat_msg, fpath, fname, encodeid, "360")
+    ff_encoders[encodeid] = encoder
+    
     # Add the encoding task to the queue and wait for its turn
     await ffQueue.put(encodeid)
     await ffEvent.wait()
@@ -136,7 +137,8 @@ async def fencode(fname, fpath, message, m):
 
     try:
         # Start the encoding process
-        out_path = await FFEncoder(stat_msg, fpath, fname, encodeid, "360").start_encode()
+        #out_path = await FFEncoder(stat_msg, fpath, fname, encodeid, "360").start_encode()
+        out_path = await encoder.start_encode()
     except Exception as e:
         await stat_msg.delete()
         #await encode.delete()
