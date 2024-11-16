@@ -77,9 +77,11 @@ async def callback_handler(client, query: CallbackQuery):
         )
 
     elif query.data.startswith("remove_task:"):
-        encodeid = int(query.data.split(":")[1])
+        data = query.data.split(":")
+        encodeid = int(data[1])  # The encodeid
+        fpath = data[2]  # The file path passed in the button data
 
-        # Remove the encodeid from the queue
+        # Remove the encodeid from the queue and delete its associated file
         temp_queue = []
         removed = False
         while not ffQueue.empty():
@@ -93,13 +95,19 @@ async def callback_handler(client, query: CallbackQuery):
         for task in temp_queue:
             await ffQueue.put(task)
 
-        # Notify user based on whether the task was removed
-        if removed:
-            await query.answer("Task removed from the queue.", show_alert=True)
-            await query.message.delete()  # Delete the queue status message
-        else:
-            await query.answer("Task not found in the queue.", show_alert=True)
-            
+        # Delete the file associated with the task if it was removed
+        if removed and os.path.exists(fpath):
+            try:
+                await aioremove(fpath)  # Remove the file
+                await query.answer("Task removed from the queue and file deleted.", show_alert=True)
+            except Exception as e:
+                await query.answer(f"Error deleting file: {e}", show_alert=True)
+        elif removed:
+            await query.answer("Task removed, but file not found.", show_alert=True)
+        
+        # Delete the queue status message
+        await query.message.delete()
+    
     elif query.data.startswith("cancel_encoding:"):
         # Extract the file name (encoded filename)
         encodeid = int(query.data.split(":")[1])
@@ -137,7 +145,7 @@ async def fencode(fname, fpath, message, m):
         queue_markup = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("Queue Status", callback_data=f"queue_status:{encodeid}")],
-            [InlineKeyboardButton("Remove from Queue", callback_data=f"remove_task:{encodeid}")]
+            [InlineKeyboardButton("Remove from Queue", callback_data=f"remove_task:{encodeid}:{fpath}")]
         ]
         )
         await stat_msg.edit_text(
