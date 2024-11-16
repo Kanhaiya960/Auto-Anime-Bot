@@ -39,17 +39,16 @@ async def callback_query_handler(client, callback_query):
         encodeid = data.split(":")[1]  # Extract the encode ID from callback data
 
         # Calculate real-time queue position
-        ongoing_task = ffLock.locked()  # Check if an encoding task is ongoing
         queue_list = list(ffQueue._queue)  # Current queue state
-        total_queue = len(queue_list) + (1 if ongoing_task else 0)  # Total tasks
+        total_queue = len(queue_list)  # Total tasks in the queue
 
-        try:
-            # Find the position of the encodeid in the queue (1-based index)
-            queue_position = queue_list.index(encodeid) + (2 if ongoing_task else 1)
+        if encodeid in queue_list:
+            # Task is still in the queue
+            queue_position = queue_list.index(encodeid) + 1  # 1-based index
             position_message = f"Queue Position: {queue_position}\nTotal Queue: {total_queue}"
-        except ValueError:
-            # Task is either completed or currently being encoded
-            position_message = f"Queue Position: Ongoing\nTotal Queue: {total_queue}"
+        else:
+            # The task has either been completed or removed
+            position_message = "This task is no longer in the queue."
 
         # Show popup with the position details
         await callback_query.answer(position_message, show_alert=True)
