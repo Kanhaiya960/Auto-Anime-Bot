@@ -111,9 +111,9 @@ async def fencode(fname, fpath, message, m):
         await stat_msg.delete()
         #await encode.delete()
         ffLock.release()
-        return await message.reply(f"Encoding failed: {str(e)}")
+        return await message.reply(f"<b>Encoding failed: {str(e)}</b>")
 
-    await stat_msg.edit_text("Successfully Compressed. Now proceeding to upload...")
+    await stat_msg.edit_text("<b>Successfully Compressed. Now proceeding to upload...</b>")
     await asleep(1.5)
 
     try:
@@ -145,7 +145,7 @@ async def fencode(fname, fpath, message, m):
         )
     except Exception as e:
         await message.reply(
-            f"Error during upload: {e}. Encoding task canceled, please retry."
+            f"<b>Error during upload: {e}. Encoding task canceled, please retry.</b>"
         )
         await stat_msg.delete()
         #await encode.delete()
