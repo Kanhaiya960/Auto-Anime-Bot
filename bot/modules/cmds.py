@@ -137,7 +137,11 @@ async def add_to_task(client, message):
 async def dwe_file(client, message):
     start_time = time.time()
     try:
-        m = await message.reply("File Received. Start Downloading.....")
+        #m = await message.reply("File Received. Start Downloading.....")
+        m = await message.reply(
+            "File Received. Start Downloading.....",
+            reply_to_message_id=message.id
+        )
         # Download the file
         file_path = await client.download_media(
             message,
