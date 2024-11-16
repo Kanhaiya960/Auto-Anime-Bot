@@ -102,7 +102,7 @@ async def fencode(fname, fpath, message, m):
         f"    • <b>File Name:</b> {fname}\n"
         f"    • <b>File Path:</b> {fpath}"
     )
-    stat_msg = await encode.edit_text(
+    stat_msg = await m.edit_text(
         f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
     )
     
