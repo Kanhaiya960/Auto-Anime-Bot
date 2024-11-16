@@ -66,7 +66,7 @@ async def fetch_animes():
 
 async def fencode(fname, fpath, message, m):
     # Notify the user that encoding has started
-    
+    t = time.time()
     encode = await m.edit_text(
         f"File downloaded successfully:\n\n"
         f"    • <b>File Name:</b> {fname}\n"
@@ -156,11 +156,17 @@ async def fencode(fname, fpath, message, m):
     # Release the lock once the task is completed
     ffLock.release()
     await stat_msg.delete()
+    total_time = time.time() - t
+    formatted_time = time.strftime("%H:%M:%S", time.gmtime(total_time))
     #await encode.delete()
+    #await message.reply(
+    #    f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Upload completed successfully.</i>"
+    #)
     await message.reply(
-        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Upload completed successfully.</i>"
+        f"‣ <b>File Name:</b> <b><i>{fname}</i></b>\n\n"
+        f"<i>Upload completed successfully.</i>\n"
+        f"‣ <b>Total Time Taken:</b> {formatted_time}"
     )
-    
 
 
 
