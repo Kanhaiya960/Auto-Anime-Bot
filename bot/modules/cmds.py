@@ -139,7 +139,7 @@ async def dwe_file(client, message):
     try:
         #m = await message.reply("File Received. Start Downloading.....")
         m = await message.reply(
-            "File Received. Start Downloading.....",
+            "<b>File Received. Start Downloading.....</b>",
             reply_to_message_id=message.id
         )
         # Download the file
