@@ -74,7 +74,27 @@ async def callback_handler(client, query: CallbackQuery):
             f"Queue Position: {position}\nTotal Queue: {total_tasks}",
             show_alert=True
         )
+    
+    elif query.data.startswith("cancel:"):
+        # Extract the file name (encoded filename)
+        fname = query.data.split(":")[1]
 
+        # Find the FFEncoder task associated with this file
+        encoder = None
+        for task in ffQueue._queue:
+            if isinstance(task, FFEncoder) and task.__name == fname:
+                encoder = task
+                break
+
+        # If we found the encoder, cancel it
+        if encoder:
+            await encoder.cancel_encode()
+            await query.answer(f"Encoding for {fname} has been canceled.", show_alert=True)
+            await query.message.edit_text(f"<b>{fname}</b> encoding has been canceled.")
+        else:
+            await query.answer("No encoding task found to cancel.", show_alert=True)
+
+    
 async def fencode(fname, fpath, message, m):
     # Notify the user that encoding has started
     #t = time.time()
@@ -90,7 +110,13 @@ async def fencode(fname, fpath, message, m):
     stat_msg = await encode.edit_text(
         f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
     )
-
+    cancel_button = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Cancel", callback_data=f"cancel:{fname}")]]
+    )
+    await stat_msg.edit_text(
+        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
+        reply_markup=cancel_button
+    )
     encodeid = encode.id
     ffEvent = Event()
     ff_queued[encodeid] = ffEvent
