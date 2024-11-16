@@ -141,6 +141,8 @@ async def fencode(fname, fpath, message, m):
         out_path = await encoder.start_encode()
     except Exception as e:
         await stat_msg.delete()
+        #await aioremove(out_path)
+        await aioremove(fpath)
         #await encode.delete()
         ffLock.release()
         return await message.reply(f"<b>Encoding failed: {str(e)}</b>")
@@ -180,11 +182,14 @@ async def fencode(fname, fpath, message, m):
             f"<b>Error during upload: {e}. Encoding task canceled, please retry.</b>"
         )
         await stat_msg.delete()
+        await aioremove(out_path)
+        await aioremove(fpath)
         #await encode.delete()
         ffLock.release()
         return
     finally:
         await aioremove(out_path)
+        await aioremove(fpath)
         await aioremove(thumbnail_path)
 
     # Release the lock once the task is completed
