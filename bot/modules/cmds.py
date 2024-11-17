@@ -173,3 +173,106 @@ async def add_task(client, message):
     
     ani_task = bot_loop.create_task(get_animes(taskInfo.title, taskInfo.link, True))
     await sendMessage(message, f"<i><b>Task Added Successfully!</b></i>\n\n    • <b>Task Name :</b> {taskInfo.title}\n    • <b>Task Link :</b> {args[1]}")
+
+
+
+
+
+
+import re
+from pyrogram import filters
+
+async def get_message_id(message):
+    if message.forward_from_chat:
+        return message.forward_from_message_id
+    elif message.forward_sender_name:
+        return 0
+    elif message.text:
+        pattern = r"https://t.me/(?:c/)?(.*)/(\d+)"
+        matches = re.match(pattern, message.text)
+        if not matches:
+            return 0
+        return int(matches.group(2))
+    else:
+        return 0
+
+
+@bot.on_message(command("channel") & private & user(Var.ADMINS))
+@new_task
+async def channel_task(client, message):    
+    # Get the first message
+    while True:
+        try:
+            first_message = await client.ask(
+                text="Forward the First Message from the Channel",
+                chat_id=message.from_user.id,
+                filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
+                timeout=60,
+            )
+        except:
+            return
+        f_msg_id = await get_message_id(first_message)
+        if f_msg_id:
+            break
+        else:
+            await first_message.reply(
+                "❌ Error\n\nThis forwarded post is not valid. Please forward a valid message from the channel.",
+                quote=True,
+            )
+
+    # Get the second message
+    while True:
+        try:
+            second_message = await client.ask(
+                text="Forward the Second Message from the Channel",
+                chat_id=message.from_user.id,
+                filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
+                timeout=60,
+            )
+        except:
+            return
+        s_msg_id = await get_message_id(second_message)
+        if s_msg_id:
+            break
+        else:
+            await second_message.reply(
+                "❌ Error\n\nThis forwarded post is not valid. Please forward a valid message from the channel.",
+                quote=True,
+            )
+
+    # Ensure first_message_id < second_message_id
+    start_msg_id = min(f_msg_id, s_msg_id)
+    end_msg_id = max(f_msg_id, s_msg_id)
+    chat_id = first_message.forward_from_chat.id
+
+    await message.reply(
+        f"Processing messages from ID {start_msg_id} to {end_msg_id} in channel {chat_id}."
+    )
+
+    # Iterate through messages in the range
+    for msg_id in range(start_msg_id, end_msg_id + 1):
+        try:
+            msg = await client.get_messages(chat_id, msg_id)
+            if msg.video or (msg.document and msg.document.mime_type.startswith("video/")):
+                start_time = time.time()
+                reply_message = await message.reply(
+                    f"<b>Downloading message {msg_id}...</b>"
+                )
+                file_path = await client.download_media(
+                    msg,
+                    progress=progress_for_pyrogram,
+                    progress_args=(f"<b>Downloading...</b>", reply_message, start_time),
+                )
+                if file_path:
+                    # Extract filename from message
+                    file_name = (
+                        msg.video.file_name if msg.video else msg.document.file_name
+                    )
+
+                    # Pass the downloaded file to ffencode with filename and filepath
+                    encode_task = bot_loop.create_task(fencode(file_name, file_path, msg, reply_message))            
+                else:
+                    await reply_message.edit("Failed to download media.")
+        except Exception as e:
+            await message.reply(f"Error processing message {msg_id}: {str(e)}")
+            
