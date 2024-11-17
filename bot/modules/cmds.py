@@ -204,7 +204,7 @@ async def channel_task(client, message):
     while True:
         try:
             first_message = await client.ask(
-                text="Forward the First Message from the Channel",
+                text="<b>Forward the First Message from the Channel</b>",
                 chat_id=message.from_user.id,
                 filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
                 timeout=60,
@@ -216,7 +216,7 @@ async def channel_task(client, message):
             break
         else:
             await first_message.reply(
-                "❌ Error\n\nThis forwarded post is not valid. Please forward a valid message from the channel.",
+                "<b>❌ Error\n\nThis forwarded post is not valid. Please forward a valid message from the channel.</b>",
                 quote=True,
             )
 
@@ -224,7 +224,7 @@ async def channel_task(client, message):
     while True:
         try:
             second_message = await client.ask(
-                text="Forward the Second Message from the Channel",
+                text="<b>Forward the Second Message from the Channel</b>",
                 chat_id=message.from_user.id,
                 filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
                 timeout=60,
@@ -236,7 +236,7 @@ async def channel_task(client, message):
             break
         else:
             await second_message.reply(
-                "❌ Error\n\nThis forwarded post is not valid. Please forward a valid message from the channel.",
+                "<b>❌ Error\n\nThis forwarded post is not valid. Please forward a valid message from the channel.</b>",
                 quote=True,
             )
 
@@ -246,7 +246,7 @@ async def channel_task(client, message):
     chat_id = first_message.forward_from_chat.id
 
     await message.reply(
-        f"Processing messages from ID {start_msg_id} to {end_msg_id} in channel {chat_id}."
+        f"<b>Processing messages from ID {start_msg_id} to {end_msg_id} in channel {chat_id}.</b>"
     )
 
     # Iterate through messages in the range
