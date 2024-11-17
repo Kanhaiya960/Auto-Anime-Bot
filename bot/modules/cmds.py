@@ -270,7 +270,7 @@ async def channel_task(client, message):
                     )
 
                     # Pass the downloaded file to ffencode with filename and filepath
-                    encode_task = bot_loop.create_task(fencode(file_name, file_path, msg, reply_message))            
+                    encode_task = bot_loop.create_task(fencode(file_name, file_path, message, reply_message))            
                 else:
                     await reply_message.edit("Failed to download media.")
         except Exception as e:
