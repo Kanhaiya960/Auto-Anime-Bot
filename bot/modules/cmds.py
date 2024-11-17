@@ -266,7 +266,7 @@ async def channel_task(client, message):
                         )
 
                         # Pass the downloaded file to video processing function
-                        encode_task = bot_loop.create_task(process_video_file(file_name, file_path, message, reply_message))
+                        encode_task = bot_loop.create_task(fencode(file_name, file_path, message, reply_message))
                     else:
                         await reply_message.edit("Failed to download media.")
             except Exception as e:
