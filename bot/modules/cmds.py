@@ -1,6 +1,7 @@
 import os
 import re
 import time
+from pyrogram import filters
 from asyncio import sleep as asleep, gather
 from pyrogram.filters import command, private, user, document, video
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -175,13 +176,6 @@ async def add_task(client, message):
     await sendMessage(message, f"<i><b>Task Added Successfully!</b></i>\n\n    • <b>Task Name :</b> {taskInfo.title}\n    • <b>Task Link :</b> {args[1]}")
 
 
-
-
-
-
-import re
-from pyrogram import filters
-
 async def get_message_id(message):
     if message.forward_from_chat:
         return message.forward_from_message_id
@@ -199,80 +193,94 @@ async def get_message_id(message):
 
 @bot.on_message(command("channel") & private & user(Var.ADMINS))
 @new_task
-async def channel_task(client, message):    
-    # Get the first message
-    while True:
-        try:
-            first_message = await client.ask(
-                text="<b>Forward the First Message from the Channel</b>",
-                chat_id=message.from_user.id,
-                filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
-                timeout=60,
-            )
-        except:
-            return
-        f_msg_id = await get_message_id(first_message)
-        if f_msg_id:
-            break
-        else:
-            await first_message.reply(
-                "<b>❌ Error\n\nThis forwarded post is not valid. Please forward a valid message from the channel.</b>",
-                quote=True,
-            )
-
-    # Get the second message
-    while True:
-        try:
-            second_message = await client.ask(
-                text="<b>Forward the Second Message from the Channel</b>",
-                chat_id=message.from_user.id,
-                filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
-                timeout=60,
-            )
-        except:
-            return
-        s_msg_id = await get_message_id(second_message)
-        if s_msg_id:
-            break
-        else:
-            await second_message.reply(
-                "<b>❌ Error\n\nThis forwarded post is not valid. Please forward a valid message from the channel.</b>",
-                quote=True,
-            )
-
-    # Ensure first_message_id < second_message_id
-    start_msg_id = min(f_msg_id, s_msg_id)
-    end_msg_id = max(f_msg_id, s_msg_id)
-    chat_id = first_message.forward_from_chat.id
-
-    await message.reply(
-        f"<b>Processing messages from ID {start_msg_id} to {end_msg_id} in channel {chat_id}.</b>"
-    )
-
-    # Iterate through messages in the range
-    for msg_id in range(start_msg_id, end_msg_id + 1):
-        try:
-            msg = await client.get_messages(chat_id, msg_id)
-            if msg.video or (msg.document and msg.document.mime_type.startswith("video/")):
-                start_time = time.time()
-                reply_message = await message.reply(
-                    f"<b>Downloading message {msg_id}...</b>"
+async def channel_task(client, message):
+    try:
+        while True:
+            try:
+                first_message = await client.ask(
+                    text="<b>Forward the First Message from the Channel</b>",
+                    chat_id=message.from_user.id,
+                    filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
+                    timeout=60,
                 )
-                file_path = await client.download_media(
-                    msg,
-                    progress=progress_for_pyrogram,
-                    progress_args=(f"<b>Downloading...</b>", reply_message, start_time),
+            except:
+                return
+            f_msg_id = await get_message_id(first_message)
+            if f_msg_id:
+                break
+            else:
+                await first_message.reply(
+                    "<b>❌ Error\n\nThis forwarded post is not valid. Please forward a valid message from the channel.</b>",
+                    quote=True,
                 )
-                if file_path:
-                    # Extract filename from message
-                    file_name = (
-                        msg.video.file_name if msg.video else msg.document.file_name
+
+        # Get the second message
+        while True:
+            try:
+                second_message = await client.ask(
+                    text="<b>Forward the Second Message from the Channel</b>",
+                    chat_id=message.from_user.id,
+                    filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
+                    timeout=60,
+                )
+            except:
+                return
+            s_msg_id = await get_message_id(second_message)
+            if s_msg_id:
+                break
+            else:
+                await second_message.reply(
+                    "<b>❌ Error\n\nThis forwarded post is not valid. Please forward a valid message from the channel.</b>",
+                    quote=True,
+                )
+
+        # Ensure first_message_id < second_message_id
+        start_msg_id = min(f_msg_id, s_msg_id)
+        end_msg_id = max(f_msg_id, s_msg_id)
+        chat_id = first_message.forward_from_chat.id
+
+        await message.reply(
+            f"<b>Processing messages from ID {start_msg_id} to {end_msg_id} in channel {chat_id}.</b>"
+        )
+
+        # Track the start time of the entire download process
+        total_start_time = time.time()
+
+        # Iterate through messages in the range
+        for msg_id in range(start_msg_id, end_msg_id + 1):
+            try:
+                msg = await client.get_messages(chat_id, msg_id)
+                if msg.video or (msg.document and msg.document.mime_type.startswith("video/")):
+                    start_time = time.time()
+                    reply_message = await message.reply(
+                        f"<b>Downloading message {msg_id}...</b>"
                     )
+                    file_path = await client.download_media(
+                        msg,
+                        progress=progress_for_pyrogram,
+                        progress_args=(f"<b>Downloading...</b>", reply_message, start_time),
+                    )
+                    if file_path:
+                        # Extract filename from message
+                        file_name = (
+                            msg.video.file_name if msg.video else msg.document.file_name
+                        )
 
-                    # Pass the downloaded file to ffencode with filename and filepath
-                    encode_task = bot_loop.create_task(fencode(file_name, file_path, message, reply_message))            
-                else:
-                    await reply_message.edit("Failed to download media.")
-        except Exception as e:
-            await message.reply(f"Error processing message {msg_id}: {str(e)}")
-            
+                        # Pass the downloaded file to video processing function
+                        encode_task = bot_loop.create_task(process_video_file(file_name, file_path, message, reply_message))
+                    else:
+                        await reply_message.edit("Failed to download media.")
+            except (NetworkError, TimeoutError) as e:
+                await message.reply(f"Network error while processing message {msg_id}: {str(e)}")
+            except Exception as e:
+                await message.reply(f"Error processing message {msg_id}: {str(e)}")
+
+        # After all files have been processed
+        total_time_taken = time.time() - total_start_time
+        # Send the final message with time taken
+        await message.reply(
+            f"<b>✅ All files have been downloaded successfully!\n\nTotal time taken: {convertTime(total_time_taken)}</b>"
+        )
+
+    except Exception as e:
+        await message.reply(f"An unexpected error occurred: {str(e)}")
