@@ -220,8 +220,15 @@ async def fencode(fname, fpath, message, m):
             progress=progress_for_pyrogram,
             progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
         )
-        channel_id = int(-1001825550753)  # Replace with your channel ID
-        await msg.copy(chat_id=channel_id)
+        #channel_id = int(-1001825550753)  # Replace with your channel ID
+        #await msg.copy(chat_id=channel_id)
+        channel_ids = [
+            int(-1001825550753),
+            int(-1002373955828)
+        ]
+
+        for channel_id in channel_ids:
+            await msg.copy(chat_id=channel_id)
     except Exception as e:
         await message.reply(
             f"<b>Error during upload: {e}. Encoding task canceled, please retry.</b>"
