@@ -61,9 +61,7 @@ class FFEncoder:
 <blockquote>   ‣ <b>Size :</b> {convertBytes(ensize)} out of ~ {convertBytes(tsize)}
     ‣ <b>Speed :</b> {convertBytes(speed)}/s
     ‣ <b>Time Took :</b> {convertTime(diff)}
-    ‣ <b>Time Left :</b> {convertTime(eta)}</blockquote>
-    ‣ <b>proc id :</b> {self.__proc}    
-    """
+    ‣ <b>Time Left :</b> {convertTime(eta)}</blockquote>"""
                 cancel_markup = InlineKeyboardMarkup([
                     [InlineKeyboardButton("Cancel Encoding", callback_data=f"cancel_encoding:{self.__encodeid}")]
                 ])
@@ -87,6 +85,9 @@ class FFEncoder:
         ffcode = ffargs[self.__qual].format(dl_npath, self.__prog_file, out_npath)
         
         LOGS.info(f'FFCode: {ffcode}')
+        LOGS.info(f"Progress file: {self.__prog_file}")
+        LOGS.info(f"Subprocess created: {self.__proc}")
+        LOGS.info(f"Subprocess PID: {self.__proc.pid if self.__proc else 'None'}")
         self.__proc = await create_subprocess_shell(ffcode, stdout=PIPE, stderr=PIPE)
         proc_pid = self.__proc.pid
         ffpids_cache.append(proc_pid)
