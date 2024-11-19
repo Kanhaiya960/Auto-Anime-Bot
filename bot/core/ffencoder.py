@@ -61,7 +61,9 @@ class FFEncoder:
 <blockquote>   ‣ <b>Size :</b> {convertBytes(ensize)} out of ~ {convertBytes(tsize)}
     ‣ <b>Speed :</b> {convertBytes(speed)}/s
     ‣ <b>Time Took :</b> {convertTime(diff)}
-    ‣ <b>Time Left :</b> {convertTime(eta)}</blockquote>"""
+    ‣ <b>Time Left :</b> {convertTime(eta)}</blockquote>
+    ‣ <b>proc id :</b> {self.__proc}    
+    """
                 cancel_markup = InlineKeyboardMarkup([
                     [InlineKeyboardButton("Cancel Encoding", callback_data=f"cancel_encoding:{self.__encodeid}")]
                 ])
