@@ -116,97 +116,98 @@ async def callback_handler(client, query: CallbackQuery):
         else:
             await query.answer("File path not found in cache.", show_alert=True)
     
-    elif query.data.startswith("cancel_encode:"):
+    elif query.data.startswith("cancel_encoding:"):
         # Extract the file name (encoded filename)
         encodeid = int(query.data.split(":")[1])
 
-        encoder = ff_encoders.get(encodeid)
-        if not encoder:
-            await query.answer("Task not found or already completed!", show_alert=True)
-            return
-        
-        
-        await encoder.cancel_encode()
-        ff_encoders.pop(encodeid, None)
-    
-        await query.message.edit_text(
-            f"‣ <b>File Name :</b> <b><i>it was</i></b>\n\n<i>Encoding canceled by the user.</i>"
-        )
-        await query.answer("Encoding canceled!")
+        # Check if the encoding task is in progress and cancel it
+        encodeid = int(query.data.split(":")[1])
+
+        # Check if the encoding task exists
+        if encodeid in ff_encoders:
+            encoder = ff_encoders[encodeid]  # Retrieve the FFEncoder instance
+            await encoder.cancel_encode()  # Call cancel_encode to stop the encoding
+            await query.answer("Encoding process has been canceled.", show_alert=True)
+        else:
+            await query.answer("No encoding task found to cancel.", show_alert=True)
 
 
 async def fencode(fname, fpath, message, m):
-    await m.edit_text(
+    # Notify the user that encoding has started
+    #t = time.time()
+    encode = await m.edit_text(
         f"File downloaded successfully:\n\n"
         f"    • <b>File Name:</b> {fname}\n"
         f"    • <b>File Path:</b> {fpath}"
     )
     stat_msg = await m.edit_text(
-        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>"
+        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
     )
     
-    encodeid = m.id
+    encodeid = encode.id
     ffEvent = Event()
     ff_queued[encodeid] = ffEvent
-    ff_encoders[encodeid] = None
-    cancel_markup = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("Cancel", callback_data=f"cancel_encode:{encodeid}")]]
-    )
 
-    # Check if lock is active, queue task if necessary
+    # If the lock is already engaged, inform the user that the task is queued
     if ffLock.locked():
         file_path_cache[encodeid] = fpath
         queue_markup = InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("Queue Status", callback_data=f"queue_status:{encodeid}")],
-                [InlineKeyboardButton("Remove from Queue", callback_data=f"remove_task:{encodeid}")]
-            ]
+        [
+            [InlineKeyboardButton("Queue Status", callback_data=f"queue_status:{encodeid}")],
+            [InlineKeyboardButton("Remove from Queue", callback_data=f"remove_task:{encodeid}")]
+        ]
         )
         await stat_msg.edit_text(
             f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Queued to Encode...</i>",
             reply_markup=queue_markup
         )
 
-    encoder = FFEncoder(stat_msg, fpath, fname, encodeid, "360")
-    ff_encoders[encodeid] = encoder
-
+    #encoder = FFEncoder(stat_msg, fpath, fname, encodeid, "360")
+    #ff_encoders[encodeid] = encoder
+    
+    # Add the encoding task to the queue and wait for its turn
     await ffQueue.put(encodeid)
     await ffEvent.wait()
+ 
     t = time.time()
-
-    # Acquire lock for encoding
+   
+    # Acquire the lock for the current encoding task
     await ffLock.acquire()
     await stat_msg.edit_text(
-        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Ready to Encode...</i>",
-        reply_markup=cancel_markup
+        f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Ready to Encode...</i>"
     )
 
     await asleep(1.5)
 
     try:
-        # Start encoding process
-        out_path = await encoder.start_encode()
-
-        # Check if the task was canceled during encoding
-        if encoder.canceled:
-            raise Exception("Encoding canceled by the user.")
+        # Start the encoding process
+        out_path = await FFEncoder(stat_msg, fpath, fname, encodeid, "360").start_encode()    
     except Exception as e:
         await stat_msg.delete()
-        ff_encoders.pop(encodeid, None)  # Remove encoder reference
-        await aioremove(fpath)  # Cleanup original file
-        if 'out_path' in locals() and os.path.exists(out_path):
-            await aioremove(out_path)  # Cleanup output file if exists
-        ffLock.release()  # Release lock
-        return await message.reply(f"<b>Task Canceled or Failed: {str(e)}</b>")
+        await aioremove(out_path)
+        await aioremove(fpath)
+        #await encode.delete()
+        ffLock.release()
+        return await message.reply(f"<b>Encoding failed: {str(e)}</b>")
 
     await stat_msg.edit_text("<b>Successfully Compressed. Now proceeding to upload...</b>")
     await asleep(1.5)
 
     try:
-        # Get video info for upload
         start_time = time.time()
         duration, width, height = get_video_info(out_path)
         thumbnail_path = await download_thumbnail(out_path)
+        
+        # Upload the encoded file using Pyrogram's send_video
+        #await bot.send_document(
+        #    chat_id=message.chat.id,
+        #    document=out_path,
+        #    thumb="thumb.jpg" if ospath.exists("thumb.jpg") else None,                  
+        #    force_document=True,
+        #    caption=f"‣ <b>File Name:</b> <i>{fname}</i>\n‣ <b>Status:</b> Uploaded Successfully.",
+        #    progress=progress_for_pyrogram,
+        #    progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
+        #)
         msg = await bot.send_video(
             chat_id=message.chat.id,
             video=out_path,
@@ -219,9 +220,13 @@ async def fencode(fname, fpath, message, m):
             progress=progress_for_pyrogram,
             progress_args=("<b>Upload Started....</b>", stat_msg, start_time)
         )
+        #channel_id = int(-1001825550753)  # Replace with your channel ID
+        #await msg.copy(chat_id=channel_id)
+        channel_ids = [
+            int(-1001825550753),
+            int(-1002373955828)
+        ]
 
-        # Optional: Copy video to specific channels
-        channel_ids = [-1001825550753, -1002373955828]
         for channel_id in channel_ids:
             await msg.copy(chat_id=channel_id)
     except Exception as e:
@@ -231,23 +236,31 @@ async def fencode(fname, fpath, message, m):
         await stat_msg.delete()
         await aioremove(out_path)
         await aioremove(fpath)
+        #await encode.delete()
         ffLock.release()
         return
     finally:
         await aioremove(out_path)
         await aioremove(fpath)
-        if thumbnail_path:
-            await aioremove(thumbnail_path)
+        await aioremove(thumbnail_path)
 
-    # Release lock and delete status message
+    # Release the lock once the task is completed
     ffLock.release()
     await stat_msg.delete()
-
-    # Calculate total time
     total_time = time.time() - t
     formatted_time = time.strftime("%H:%M:%S", time.gmtime(total_time))
+    #await encode.delete()
+    #await message.reply(
+    #    f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Upload completed successfully.</i>"
+    #)
     await message.reply(
         f"‣ <b>File Name:</b> <b><i>{fname}</i></b>\n\n"
         f"<i>Upload completed successfully.</i>\n"
         f"‣ <b>Total Time Taken:</b> {formatted_time}"
     )
+
+
+
+
+async def get_animes(name, torrent, force=False):
+    pass
