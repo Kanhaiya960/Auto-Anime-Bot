@@ -130,7 +130,7 @@ async def callback_handler(client, query: CallbackQuery):
         ff_encoders.pop(encodeid, None)
     
         await query.message.edit_text(
-            f"‣ <b>File Name :</b> <b><i>{encoder.__name}</i></b>\n\n<i>Encoding canceled by the user.</i>"
+            f"‣ <b>File Name :</b> <b><i>it was</i></b>\n\n<i>Encoding canceled by the user.</i>"
         )
         await query.answer("Encoding canceled!")
 
