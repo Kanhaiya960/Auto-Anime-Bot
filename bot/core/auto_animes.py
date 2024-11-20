@@ -135,7 +135,7 @@ async def callback_handler(client, query: CallbackQuery):
 async def fencode(fname, fpath, message, m):
     # Notify the user that encoding has started
     #t = time.time()
-    encode = await m.edit_text(
+    await m.edit_text(
         f"File downloaded successfully:\n\n"
         f"    • <b>File Name:</b> {fname}\n"
         f"    • <b>File Path:</b> {fpath}"
@@ -144,7 +144,7 @@ async def fencode(fname, fpath, message, m):
         f"‣ <b>File Name :</b> <b><i>{fname}</i></b>\n\n<i>Processing...</i>",
     )
     
-    encodeid = encode.id
+    encodeid = m.id
     ffEvent = Event()
     ff_queued[encodeid] = ffEvent
 
