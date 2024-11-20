@@ -104,22 +104,22 @@ class FFEncoder:
             await rep.report((await self.__proc.stderr.read()).decode().strip(), "error")
             
     async def cancel_encode(self):
-    self.is_cancelled = True
-    if self.__proc is not None:
+        self.is_cancelled = True
+        if self.__proc is not None:
+            try:
+                self.__proc.kill()
+            except Exception as e:
+               pass
+        
+        # Cleanup temporary files if needed
         try:
-            self.__proc.kill()
+            dl_npath = ospath.join("encode", "ffanimeadvin.mkv")
+            out_npath = ospath.join("encode", "ffanimeadvout.mkv")
+            if ospath.exists(dl_npath):
+                await aioremove(dl_npath)
+            if ospath.exists(out_npath):
+                await aioremove(out_npath)
+            if ospath.exists(self.__prog_file):
+                await aioremove(self.__prog_file)
         except Exception as e:
-           pass
-    
-    # Cleanup temporary files if needed
-    try:
-        dl_npath = ospath.join("encode", "ffanimeadvin.mkv")
-        out_npath = ospath.join("encode", "ffanimeadvout.mkv")
-        if ospath.exists(dl_npath):
-            await aioremove(dl_npath)
-        if ospath.exists(out_npath):
-            await aioremove(out_npath)
-        if ospath.exists(self.__prog_file):
-            await aioremove(self.__prog_file)
-    except Exception as e:
-        pass
+            pass
