@@ -63,10 +63,10 @@ class FFEncoder:
     ‣ <b>Time Took :</b> {convertTime(diff)}
     ‣ <b>Time Left :</b> {convertTime(eta)}</blockquote>"""
                 cancel_markup = InlineKeyboardMarkup([
-                    [InlineKeyboardButton("Cancel Encoding", callback_data=f"cancel_encode:{self.__encodeid}")]
+                    [InlineKeyboardButton("Cancel Encoding", callback_data=f"cancel_encoding:{self.__encodeid}")]
                 ])
-                # await editMessage(self.message, progress_str)
-                await editMessage(self.message, progress_str, buttons=cancel_markup)
+                await editMessage(self.message, progress_str)
+                #await editMessage(self.message, progress_str, buttons=cancel_markup)
                 if (prog := findall(r"progress=(\w+)", text)) and prog[-1] == 'end':
                     break
             await asleep(8)
@@ -108,18 +108,5 @@ class FFEncoder:
         if self.__proc is not None:
             try:
                 self.__proc.kill()
-            except Exception as e:
-               pass
-        
-        # Cleanup temporary files if needed
-        try:
-            dl_npath = ospath.join("encode", "ffanimeadvin.mkv")
-            out_npath = ospath.join("encode", "ffanimeadvout.mkv")
-            if ospath.exists(dl_npath):
-                await aioremove(dl_npath)
-            if ospath.exists(out_npath):
-                await aioremove(out_npath)
-            if ospath.exists(self.__prog_file):
-                await aioremove(self.__prog_file)
-        except Exception as e:
-            pass
+            except:
+                pass
