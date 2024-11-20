@@ -63,7 +63,7 @@ class FFEncoder:
     ‣ <b>Time Took :</b> {convertTime(diff)}
     ‣ <b>Time Left :</b> {convertTime(eta)}</blockquote>"""
                 cancel_markup = InlineKeyboardMarkup([
-                    [InlineKeyboardButton("Cancel Encoding", callback_data=f"cancel_encoding:{self.__encodeid}")]
+                    [InlineKeyboardButton("Cancel Encoding", callback_data=f"cancel_encode:{self.__encodeid}")]
                 ])
                 await editMessage(self.message, progress_str)
                 #await editMessage(self.message, progress_str, buttons=cancel_markup)
