@@ -118,7 +118,7 @@ async def callback_handler(client, query: CallbackQuery):
     
     elif query.data.startswith("cancel_encode:"):
         # Extract the file name (encoded filename)
-        encodeid = int(query.data.matches[0].group(1))
+        encodeid = int(query.data.split(":")[1])
 
         encoder = ff_encoders.get(encodeid)
         if not encoder:
