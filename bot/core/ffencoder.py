@@ -65,7 +65,8 @@ class FFEncoder:
                 cancel_markup = InlineKeyboardMarkup([
                     [InlineKeyboardButton("Cancel Encoding", callback_data=f"cancel_encoding:{self.__encodeid}")]
                 ])
-                await editMessage(self.message, progress_str, buttons=cancel_markup)
+                await editMessage(self.message, progress_str)
+                #await editMessage(self.message, progress_str, buttons=cancel_markup)
                 if (prog := findall(r"progress=(\w+)", text)) and prog[-1] == 'end':
                     break
             await asleep(8)
@@ -84,9 +85,6 @@ class FFEncoder:
         ffcode = ffargs[self.__qual].format(dl_npath, self.__prog_file, out_npath)
         
         LOGS.info(f'FFCode: {ffcode}')
-        LOGS.info(f"Progress file: {self.__prog_file}")
-        LOGS.info(f"Subprocess created: {self.__proc}")
-        LOGS.info(f"Subprocess PID: {self.__proc.pid if self.__proc else 'None'}")
         self.__proc = await create_subprocess_shell(ffcode, stdout=PIPE, stderr=PIPE)
         proc_pid = self.__proc.pid
         ffpids_cache.append(proc_pid)
