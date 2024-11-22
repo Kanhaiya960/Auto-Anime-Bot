@@ -9,7 +9,7 @@ from pyrogram.errors import FloodWait, MessageNotModified
 from bot import bot, bot_loop, Var, ani_cache
 from bot.core.database import db
 from bot.core.func_utils import decode, is_fsubbed, get_fsubs, editMessage, sendMessage, new_task, convertTime, getfeed
-from bot.core.auto_animes import get_animes, fencode
+from bot.core.auto_animes import fencode
 from bot.core.reporter import rep
 from bot.core.utils import progress_for_pyrogram
 
@@ -109,27 +109,6 @@ async def add_task(client, message):
     
     Var.RSS_ITEMS.append(args[0])
     req_msg = await sendMessage(message, f"`Global Link Added Successfully!`\n\n    • **All Link(s) :** {', '.join(Var.RSS_ITEMS)[:-2]}")
-
-@bot.on_message(command('addtotask') & private & user(Var.ADMINS))
-@new_task
-async def add_to_task(client, message):    
-    anime_name_msg = await client.ask(message.chat.id, "Please provide the anime name:")
-    anime_name = anime_name_msg.text.strip()
-
-    if not anime_name:
-        return await sendMessage(message, "You must provide a valid anime name.")
-    
-    anime_link_msg = await client.ask(message.chat.id, "Please provide the magnet link:")
-    anime_link = anime_link_msg.text.strip()
-
-    if not anime_link:
-        return await sendMessage(message, "You must provide a valid magnet link.")
-
-    # Create the anime task with the provided name and link
-    ani_task = bot_loop.create_task(get_animes(anime_name, anime_link, True))
-
-    # Send a success message with the task details
-    await sendMessage(message, f"<i><b>Task Added Successfully!</b></i>\n\n    • <b>Task Name:</b> {anime_name}\n    • <b>Task Link:</b> {anime_link}")
     
 
 @bot.on_message((document | video) & private & user(Var.ADMINS))
@@ -160,19 +139,6 @@ async def dwe_file(client, message):
     )
     encode_task = bot_loop.create_task(fencode(file_name, file_path, message, m))
 
-
-@bot.on_message(command('addtask') & private & user(Var.ADMINS))
-@new_task
-async def add_task(client, message):
-    if len(args := message.text.split()) <= 1:
-        return await sendMessage(message, "<b>No Task Found to Add</b>")
-    
-    index = int(args[2]) if len(args) > 2 and args[2].isdigit() else 0
-    if not (taskInfo := await getfeed(args[1], index)):
-        return await sendMessage(message, "<b>No Task Found to Add for the Provided Link</b>")
-    
-    ani_task = bot_loop.create_task(get_animes(taskInfo.title, taskInfo.link, True))
-    await sendMessage(message, f"<i><b>Task Added Successfully!</b></i>\n\n    • <b>Task Name :</b> {taskInfo.title}\n    • <b>Task Link :</b> {args[1]}")
 
 
 async def get_message_id(message):
