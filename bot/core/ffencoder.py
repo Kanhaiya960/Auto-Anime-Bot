@@ -8,12 +8,13 @@ from shlex import split as ssplit
 from asyncio import sleep as asleep, gather, create_subprocess_shell, create_task
 from asyncio.subprocess import PIPE
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
+from moviepy.editor import VideoFileClip
+from PIL import Image
 
 from bot import Var, bot_loop, ffpids_cache, LOGS
 from .func_utils import mediainfo, convertBytes, convertTime, sendMessage, editMessage
 from .reporter import rep
-from .auto_animes import get_video_info
+#from .auto_animes import get_video_info
 
 ffargs = {
     '1080': Var.FFCODE_1080,
@@ -22,6 +23,18 @@ ffargs = {
     '360': Var.FFCODE_360,
     '361': Var.FFCODE_361,
 }
+
+def get_video_info(video_path):
+    try:
+        clip = VideoFileClip(video_path)
+        duration = clip.duration  # Duration in seconds
+        width, height = clip.size  # Video resolution
+        clip.close()
+        print("Video information retrieved successfully!")
+        return duration, width, height
+    except Exception as e:
+        print(f"Error getting video info: {e}")
+        return None, None, None
 
 class FFEncoder:
     def __init__(self, message, path, name, encodeid, qual):
