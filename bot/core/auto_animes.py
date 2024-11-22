@@ -16,7 +16,6 @@ from bot import bot, bot_loop, Var, ani_cache, ffQueue, ffLock, ff_queued
 from .tordownload import TorDownloader
 from .database import db
 from .func_utils import getfeed, encode, editMessage, sendMessage, convertBytes
-from .text_utils import TextEditor
 from .ffencoder import FFEncoder
 from .tguploader import TgUploader
 from .reporter import rep
