@@ -10,37 +10,8 @@ from signal import SIGKILL
 from bot import bot, Var, bot_loop, LOGS, ffQueue, ffLock, ffpids_cache, ff_queued
 #from bot.core.auto_animes import fetch_animes
 from bot.core.func_utils import clean_up, new_task, editMessage
-from bot.modules.up_posts import upcoming_animes
+#from bot.modules.up_posts import upcoming_animes
 
-@bot.on_message(command('restart') & user(Var.ADMINS))
-@new_task
-async def restart(client, message):
-    rmessage = await message.reply('<i>Restarting...</i>')
-    #if sch.running:
-        #sch.shutdown(wait=False)
-    await clean_up()
-    if len(ffpids_cache) != 0: 
-        for pid in ffpids_cache:
-            try:
-                LOGS.info(f"Process ID : {pid}")
-                kill(pid, SIGKILL)
-            except (OSError, ProcessLookupError):
-                LOGS.error("Killing Process Failed !!")
-                continue
-    await (await create_subprocess_exec('python3', 'update.py')).wait()
-    async with aiopen(".restartmsg", "w") as f:
-        await f.write(f"{rmessage.chat.id}\n{rmessage.id}\n")
-    execl(executable, executable, "-m", "bot")
-
-async def restart():
-    if ospath.isfile(".restartmsg"):
-        with open(".restartmsg") as f:
-            chat_id, msg_id = map(int, f)
-        try:
-            await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text="<i>Restarted !</i>")
-        except Exception as e:
-            LOGS.error(e)
-            
 async def queue_loop():
     LOGS.info("Queue Loop Started !!")
     while True:
@@ -56,7 +27,7 @@ async def queue_loop():
 async def main():
     #sch.add_job(upcoming_animes, "cron", hour=0, minute=30)
     await bot.start()
-    await restart()
+    #await restart()
     LOGS.info('Auto Anime Bot Started!')
     #sch.start()
     bot_loop.create_task(queue_loop())
