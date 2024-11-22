@@ -51,8 +51,8 @@ class FFEncoder:
         self.__encodeid = encodeid
 
     async def progress(self):
-        self.__total_time = await get_video_info(self.dl_path)
-        LOGS.info(f"Video duration: {self.__total_time} seconds")
+        #self.__total_time = await get_video_info(self.dl_path)
+        #LOGS.info(f"Video duration: {self.__total_time} seconds")
         if isinstance(self.__total_time, str):
             self.__total_time = 1.0
         while not (self.__proc is None or self.is_cancelled):
@@ -93,6 +93,9 @@ class FFEncoder:
         async with aiopen(self.__prog_file, 'w+'):
             LOGS.info("Progress Temp Generated !")
             pass
+            
+        self.__total_time = await get_video_info(self.dl_path)
+        LOGS.info(f"Video duration: {self.__total_time} seconds")
         
         dl_npath, out_npath = ospath.join("encode", "ffanimeadvin.mkv"), ospath.join("encode", "ffanimeadvout.mkv")
         await aiorename(self.dl_path, dl_npath)
