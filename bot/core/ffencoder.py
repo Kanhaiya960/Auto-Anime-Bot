@@ -26,15 +26,15 @@ ffargs = {
 
 async def get_video_info(video_path):
     try:
+        if not ospath.exists(video_path):
+            raise FileNotFoundError(f"File not found: {video_path}")
         clip = VideoFileClip(video_path)
         duration = clip.duration  # Duration in seconds
-        width, height = clip.size  # Video resolution
         clip.close()
-        print("Video information retrieved successfully!")
-        return duration, width, height
+        return duration
     except Exception as e:
-        print(f"Error getting video info: {e}")
-        return None, None, None
+        LOGS.error(f"Error in get_video_info: {e}")
+        return None
 
 class FFEncoder:
     def __init__(self, message, path, name, encodeid, qual):
@@ -54,7 +54,7 @@ class FFEncoder:
 
     async def progress(self):
         LOGS.info(f"Retrieving video information for {self.__name}")
-        self.__total_time, _, _ = await get_video_info(self.dl_path)
+        self.__total_time = await get_video_info(self.dl_path)
         LOGS.info(f"Video duration: {self.__total_time} seconds")
         if isinstance(self.__total_time, str):
             self.__total_time = 1.0
