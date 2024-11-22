@@ -13,6 +13,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from bot import Var, bot_loop, ffpids_cache, LOGS
 from .func_utils import mediainfo, convertBytes, convertTime, sendMessage, editMessage
 from .reporter import rep
+from .auto_animes import get_video_info
 
 ffargs = {
     '1080': Var.FFCODE_1080,
@@ -36,10 +37,16 @@ class FFEncoder:
         self.__start_time = time()
         self.__encodeid = encodeid
 
+        LOGS.info(f"Initialized FFEncoder with file: {self.__name}, quality: {self.__qual}")
+
     async def progress(self):
-        self.__total_time = await mediainfo(self.dl_path, get_duration=True)
+        LOGS.info(f"Retrieving video information for {self.__name}")
+        self.__total_time, _, _ = get_video_info(self.dl_path)
+        LOGS.info(f"Video duration: {self.__total_time} seconds")
         if isinstance(self.__total_time, str):
             self.__total_time = 1.0
+        LOGS.info(f"Video total duration: {self.__total_time} seconds")
+        
         while not (self.__proc is None or self.is_cancelled):
             async with aiopen(self.__prog_file, 'r+') as p:
                 text = await p.read()
@@ -66,47 +73,61 @@ class FFEncoder:
                     [InlineKeyboardButton("Cancel Encoding", callback_data=f"cancel_encoding:{self.__encodeid}")]
                 ])
                 await editMessage(self.message, progress_str)
-                #await editMessage(self.message, progress_str, buttons=cancel_markup)
+                
                 if (prog := findall(r"progress=(\w+)", text)) and prog[-1] == 'end':
+                    LOGS.info(f"Encoding of {self.__name} completed.")
                     break
+
             await asleep(8)
     
     async def start_encode(self):
+        LOGS.info(f"Starting encoding for file: {self.__name}")
+        
         if ospath.exists(self.__prog_file):
             await aioremove(self.__prog_file)
+            LOGS.info(f"Removed existing progress file: {self.__prog_file}")
     
         async with aiopen(self.__prog_file, 'w+'):
-            LOGS.info("Progress Temp Generated !")
+            LOGS.info("Progress Temp Generated!")
             pass
-        
+
         dl_npath, out_npath = ospath.join("encode", "ffanimeadvin.mkv"), ospath.join("encode", "ffanimeadvout.mkv")
         await aiorename(self.dl_path, dl_npath)
-        
+        LOGS.info(f"Renamed downloaded file to: {dl_npath}")
+
         ffcode = ffargs[self.__qual].format(dl_npath, self.__prog_file, out_npath)
-        
         LOGS.info(f'FFCode: {ffcode}')
+        
         self.__proc = await create_subprocess_shell(ffcode, stdout=PIPE, stderr=PIPE)
         proc_pid = self.__proc.pid
         ffpids_cache.append(proc_pid)
+        LOGS.info(f"Started encoding process with PID: {proc_pid}")
+        
         _, return_code = await gather(create_task(self.progress()), self.__proc.wait())
         ffpids_cache.remove(proc_pid)
         
         await aiorename(dl_npath, self.dl_path)
+        LOGS.info(f"Restored original file name: {self.dl_path}")
         
         if self.is_cancelled:
+            LOGS.info("Encoding process was cancelled.")
             return
         
         if return_code == 0:
             if ospath.exists(out_npath):
                 await aiorename(out_npath, self.out_path)
+                LOGS.info(f"Encoding successful. Output file: {self.out_path}")
             return self.out_path
         else:
-            await rep.report((await self.__proc.stderr.read()).decode().strip(), "error")
+            error_message = await self.__proc.stderr.read()
+            LOGS.error(f"Encoding failed for {self.__name}. Error: {error_message.decode().strip()}")
+            await rep.report(error_message.decode().strip(), "error")
             
     async def cancel_encode(self):
         self.is_cancelled = True
         if self.__proc is not None:
             try:
                 self.__proc.kill()
+                LOGS.info(f"Encoding process for {self.__name} was terminated.")
             except:
                 pass
