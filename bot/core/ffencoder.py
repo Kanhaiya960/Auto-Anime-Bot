@@ -24,7 +24,7 @@ ffargs = {
     '361': Var.FFCODE_361,
 }
 
-def get_video_info(video_path):
+async def get_video_info(video_path):
     try:
         clip = VideoFileClip(video_path)
         duration = clip.duration  # Duration in seconds
@@ -54,7 +54,7 @@ class FFEncoder:
 
     async def progress(self):
         LOGS.info(f"Retrieving video information for {self.__name}")
-        self.__total_time, _, _ = get_video_info(self.dl_path)
+        self.__total_time, _, _ = await get_video_info(self.dl_path)
         LOGS.info(f"Video duration: {self.__total_time} seconds")
         if isinstance(self.__total_time, str):
             self.__total_time = 1.0
