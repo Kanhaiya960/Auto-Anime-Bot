@@ -1,1 +1,1 @@
-web: python3 run.sh
+worker: bash run.sh
